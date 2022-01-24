@@ -2,6 +2,8 @@
 
 A website for viewing an internet network as a interactive diagram, with the ability to drill down and see detail but also zoom out and see the bigger picture.
 
+[You can find a live version of the site here!](https://netgrasp.netlify.app/)
+
 ## Installation and usage
 
 To run this project you must have node installed. You can then run
