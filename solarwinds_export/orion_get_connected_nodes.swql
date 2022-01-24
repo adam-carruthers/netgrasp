@@ -1,0 +1,9 @@
+SELECT DISTINCT
+
+SourceNode.NodeName AS SrcName, SourceNode.NodeID as SrcNodeID, SourceNode.NodeDescription AS SrcNodeDesc, SourceNode.Description AS SrcMachineType, DestNode.NodeName AS DestName, DestNode.NodeID as DestNodeID, DestNode.NodeDescription AS DestNodeDesc, DestNode.Description AS DestMachineType, Topology.LayerType
+
+FROM Orion.TopologyConnections (nolock=true) Topology
+
+INNER JOIN Orion.Nodes (nolock=true) SourceNode ON Topology.SrcNodeID=SourceNode.NodeID
+
+INNER JOIN Orion.Nodes (nolock=true) DestNode ON Topology.DestNodeID=DestNode.NodeID

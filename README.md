@@ -31,3 +31,7 @@ To run tests, eslint checks and typescript checks, run
 ```
 npm run check:all
 ```
+
+## Other stuff
+
+To find out how to automatically convert your solarwinds info into a network diagram, [click here](solarwinds_export).

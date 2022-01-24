@@ -10,6 +10,7 @@ export interface ReduxNode {
   icon: keyof typeof icons;
   description: string;
   logicalParent?: string | undefined;
+  solarwindsNodeId?: string;
 }
 export interface ReduxLink {
   source: string;
