@@ -1,0 +1,103 @@
+.bg-light-grey {
+  background: #eee;
+}
+
+.inner-tab {
+  min-height: 150px;
+  max-height: 190px;
+  display: flex;
+  padding: 8px 0 10px 0;
+  overflow-x: auto;
+}
+
+.inner-tab > * {
+  flex-shrink: 0;
+}
+
+.view-tab-subset-container > div {
+  flex-shrink: 0;
+  width: 170px;
+  margin-right: 5px;
+  height: 100%;
+  padding: 5px;
+  background-color: #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.selected-tab-item {
+  border: 3px dashed black;
+}
+
+.paths-tab-paths-container > div {
+  flex-shrink: 0;
+  width: 170px;
+  height: 100%;
+  margin-right: 5px;
+  padding: 5px;
+  background-color: #eee;
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-path-tab-steps-container > div {
+  flex-shrink: 0;
+  height: 100%;
+  margin-right: 5px;
+  padding: 5px;
+  background-color: #eee;
+}
+
+.positioningButton rect {
+  fill: rgb(102, 102, 102);
+  opacity: 30%;
+  cursor: pointer;
+}
+
+.positioningButton text {
+  cursor: pointer;
+}
+
+.positioningButton:hover rect {
+  opacity: 100%;
+}
+
+.positioningButton[data-key-active] rect,
+.positioningButton:active rect {
+  fill: rgb(0, 66, 141);
+  opacity: 100%;
+}
+
+.no-resize {
+  resize: none;
+}
+
+.cursor-pointer,
+.node-g g,
+.link-g line {
+  cursor: pointer;
+}
+
+svg text {
+  user-select: none;
+  white-space: pre;
+}
+
+.link-g line:hover {
+  stroke-width: 5;
+}
+
+#app {
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+#svg-container {
+  flex-grow: 1;
+  flex-shrink: 1;
+  overflow: auto;
+}
+
+#big-boy-container {
+  height: 100vh;
+}
