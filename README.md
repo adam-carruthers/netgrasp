@@ -1,6 +1,6 @@
-# NetGrasp
+![Netgrasp](netgrasp_logo_with_name.png)
 
-This project is a website for viewing an internet network as a interactive diagram, with the ability to drill down and see detail but also zoom out and see the bigger picture.
+A website for viewing an internet network as a interactive diagram, with the ability to drill down and see detail but also zoom out and see the bigger picture.
 
 ## Installation and usage
 

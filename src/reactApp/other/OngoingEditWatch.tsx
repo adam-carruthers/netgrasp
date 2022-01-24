@@ -10,7 +10,7 @@ const OngoingEditWatch = () => {
   if (ongoingEdit === null) return null;
 
   return (
-    <small className="text-secondary" style={{ fontSize: "0.5em" }}>
+    <div className="text-secondary">
       Ongoing edit: {ongoingEdit.editType}{" "}
       <button
         type="button"
@@ -19,9 +19,10 @@ const OngoingEditWatch = () => {
       >
         Cancel
       </button>
-      {combineLogical &&
-        " ⚠ Edits applied won't be applied to logical children"}
-    </small>
+      {combineLogical && (
+        <div>⚠ Edits applied won&apos;t be applied to logical children</div>
+      )}
+    </div>
   );
 };
 

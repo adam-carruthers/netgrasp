@@ -1,7 +1,7 @@
 {
   "name": "network-diagram",
   "version": "1.0.0",
-  "description": "Show the NHSD network chunk by chunk",
+  "description": "A website for viewing an internet network as a interactive diagram, with the ability to drill down and see detail but also zoom out and see the bigger picture.",
   "type": "module",
   "scripts": {
     "test": "jest",
@@ -19,6 +19,8 @@
     "@babel/core": "^7.16.7",
     "@babel/preset-env": "^7.16.8",
     "@babel/preset-typescript": "^7.16.7",
+    "@parcel/packager-raw-url": "^2.2.1",
+    "@parcel/transformer-webmanifest": "^2.2.1",
     "@types/d3": "^7.1.0",
     "@types/react-dom": "^17.0.11",
     "@types/wicg-file-system-access": "^2020.9.4",
