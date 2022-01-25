@@ -5,12 +5,16 @@ with open('./orion_generated_connectivity.csv') as f:
     reader = csv.DictReader(f)
     connections = list(reader)
 
-nodesByName = {}
+with open('./orion_full_node_list.csv') as f:
+    reader = csv.DictReader(f)
+    network_nodes = list(reader)
+
+nodesById = {}
 links = []
 
 
 def processNode(name, nodeDesc, machineType, nodeId):
-    if name not in nodesByName:
+    if nodeId not in nodesById:
         if "WLC" in name:
             icon = "wlc"
         elif "BIG-IP" in machineType:
@@ -38,7 +42,10 @@ def processNode(name, nodeDesc, machineType, nodeId):
         else:
             icon = None
 
-        nodesByName[name] = {
+        if name.lower().endswith('.corp.internal'):
+            name = name[:-14]
+
+        nodesById[nodeId] = {
             "id": f'Orion:{nodeId}',
             "name": name,
             "description": f"Machine Type: {machineType}\n\nDescription:\n{nodeDesc}",
@@ -56,11 +63,14 @@ for connection in connections:
                 connection["DestNodeDesc"],
                 connection["DestMachineType"],
                 connection["DestNodeID"])
-    if connection["LayerType"] == "L2":
-        links.append({
-            "source": f'Orion:{connection["SrcNodeID"]}',
-            "target": f'Orion:{connection["DestNodeID"]}'
-        })
+    links.append({
+        "source": f'Orion:{connection["SrcNodeID"]}',
+        "target": f'Orion:{connection["DestNodeID"]}'
+    })
+
+for node in network_nodes:
+    processNode(node["NodeName"], node["NodeDescription"],
+                node["MachineType"], node["NodeID"])
 
 with open("fullNetworkGraph.json", "w") as f:
-    json.dump({"nodes": list(nodesByName.values()), "links": links}, f)
+    json.dump({"nodes": list(nodesById.values()), "links": links}, f)

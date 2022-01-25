@@ -1,0 +1,3 @@
+SELECT NodeID, NodeName, NodeDescription, Description AS MachineType
+FROM Orion.Nodes
+WHERE Category=1 AND UnManaged=FALSE

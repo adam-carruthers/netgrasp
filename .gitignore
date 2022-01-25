@@ -3,3 +3,4 @@ node_modules/
 dist/
 orion_generated_connectivity.csv
 fullNetworkGraph.json
+orion_full_node_list.csv
