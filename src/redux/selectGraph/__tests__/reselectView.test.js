@@ -1,21 +1,32 @@
 import {
+  selectAllCombinesNodeIdMap,
+  selectCombinedGraphLinks,
+  selectCombinedGraphNodes,
   selectCombineLogicalChildDeviceMap,
-  selectFullGraphLogicalCombinedLinks,
-  selectFullGraphLogicalCombinedNodes,
   selectGraphToView,
   selectHighlightedNodeId,
+  selectNodeGroupDeviceMap,
   selectSelectedPathNodeIdSteps,
   selectSelectedPathNodeIdStepsLimited,
 } from "../reselectView";
 
-const standardOutputtedNodeProperties = {
-  ongoingEditIsTransparent: false,
-  alreadyInLogicalGroupWarning: false,
+const standardOutputtedFadingNodeProperties = {
   hasCombinedChildren: false,
   logicalChildren: [],
   fx: null,
   fy: null,
   pinSourceGroupId: null,
+};
+
+const standardOutputtedNodeProperties = {
+  ...standardOutputtedFadingNodeProperties,
+  ongoingEditIsTransparent: false,
+  alreadyInLogicalGroupWarning: false,
+};
+
+const emptyNodeGroups = {
+  nodeGroups: [],
+  fadingNodeGroups: [],
 };
 
 describe("selectHighlightedNodeId", () => {
@@ -156,6 +167,7 @@ describe("selectGraphToView", () => {
       links: [{ source: "aNode", target: "bNode" }],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 
@@ -207,6 +219,7 @@ describe("selectGraphToView", () => {
       ],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
 
     expect(
@@ -245,6 +258,7 @@ describe("selectGraphToView", () => {
       links: [],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 
@@ -305,6 +319,7 @@ describe("selectGraphToView", () => {
         },
       ],
       fadingLinks: [{ source: "cNode", target: "dNode" }],
+      ...emptyNodeGroups,
     });
   });
 
@@ -346,6 +361,7 @@ describe("selectGraphToView", () => {
       links: [{ source: "aNode", target: "bNode" }],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
 
     expect(
@@ -392,6 +408,7 @@ describe("selectGraphToView", () => {
       links: [],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 
@@ -455,6 +472,7 @@ describe("selectGraphToView", () => {
       links: [{ source: "aNode", target: "bNode" }],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 
@@ -507,6 +525,7 @@ describe("selectGraphToView", () => {
       links: [{ source: "dNode", target: "eNode" }],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 
@@ -570,6 +589,7 @@ describe("selectGraphToView", () => {
       links: [{ source: "aNode", target: "bNode" }],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 
@@ -641,6 +661,7 @@ describe("selectGraphToView", () => {
       links: [{ source: "aNode", target: "bNode" }],
       fadingNodes: [],
       fadingLinks: [],
+      ...emptyNodeGroups,
     });
   });
 });
@@ -665,9 +686,9 @@ describe("combineLogical true", () => {
     });
   });
 
-  test("selectFullGraphLogicalCombinedNodes works", () => {
+  test("selectFullGraphCombinedNodes works", () => {
     expect(
-      selectFullGraphLogicalCombinedNodes({
+      selectCombinedGraphNodes({
         view: { combineLogical: true },
         fullGraph: {
           nodes: [
@@ -696,7 +717,7 @@ describe("combineLogical true", () => {
 
   test("selectFullGraphLogicalCombinedLinks works", () => {
     expect(
-      selectFullGraphLogicalCombinedLinks({
+      selectCombinedGraphLinks({
         view: { combineLogical: true },
         fullGraph: {
           nodes: [
@@ -850,6 +871,312 @@ describe("combineLogical true", () => {
         { source: "dNode", target: "gNode" },
         { source: "eNode", target: "aNode" },
       ],
+      ...emptyNodeGroups,
+    });
+  });
+});
+
+describe("node groups", () => {
+  test("selectNodeGroupDeviceMap", () => {
+    expect(
+      selectNodeGroupDeviceMap({
+        nodeGroups: [
+          { id: "1", active: true, members: ["a", "b"] },
+          { id: "2", active: false, members: ["b", "c"] },
+          { id: "3", active: true, members: ["b", "d"] },
+        ],
+      })
+    ).toEqual({
+      a: "1",
+      b: "1",
+      d: "3",
+    });
+  });
+
+  test("can correctly create a combine map with logical and node groups", () => {
+    expect(
+      selectAllCombinesNodeIdMap({
+        view: {
+          combineLogical: true,
+        },
+        fullGraph: {
+          nodes: [
+            { id: "n-a" },
+            { id: "n-b" },
+            { id: "n-c", logicalParent: "n-b" },
+            { id: "n-d" },
+            { id: "n-e", logicalParent: "n-d" },
+            { id: "n-f" },
+            { id: "n-g", logicalParent: "n-f" },
+            { id: "n-h" },
+            { id: "n-i", logicalParent: "n-h" },
+          ],
+        },
+        nodeGroups: [
+          {
+            id: "ng-1",
+            active: true,
+            members: ["n-d", "n-g", "n-h", "n-i"],
+          },
+        ],
+      })
+    ).toEqual({
+      // node b and c both aren't in the group
+      // node c is child of d so is absorbed there
+      "n-c": "n-b",
+      // node d is in the group
+      // node e is the child
+      // hence both end up in the group
+      "n-d": "ng-1",
+      "n-e": "ng-1",
+      // node g is in the group
+      // however its parent node f isn't
+      // logical combines take priority over groups
+      // the node ends up combined not in the group
+      "n-g": "n-f",
+      // node h and i are both in the group
+      // i is the child of h so ends up in the group with h
+      "n-h": "ng-1",
+      "n-i": "ng-1",
+    });
+  });
+
+  test("full view style", () => {
+    expect(
+      selectGraphToView({
+        view: { viewStyle: "full", fadingLinks: true, combineLogical: false },
+        fullGraph: {
+          nodes: [
+            { id: "aNode" },
+            { id: "bNode" },
+            { id: "cNode" },
+            { id: "dNode" },
+          ],
+          links: [
+            { source: "aNode", target: "bNode" },
+            { source: "bNode", target: "cNode" },
+            { source: "cNode", target: "dNode" },
+            { source: "dNode", target: "aNode" },
+          ],
+        },
+        ongoingEdit: null,
+        nodeGroups: [
+          {
+            id: "ng-1",
+            active: "true",
+            members: ["aNode", "dNode"],
+          },
+        ],
+      })
+    ).toEqual({
+      nodes: [
+        { id: "bNode", ...standardOutputtedNodeProperties },
+        { id: "cNode", ...standardOutputtedNodeProperties },
+      ],
+      links: [
+        { source: "ng-1", target: "bNode" },
+        { source: "bNode", target: "cNode" },
+        { source: "cNode", target: "ng-1" },
+      ],
+      fadingNodes: [],
+      fadingLinks: [],
+      nodeGroups: [
+        {
+          id: "ng-1",
+          active: "true",
+          members: ["aNode", "dNode"],
+        },
+      ],
+      fadingNodeGroups: [],
+    });
+  });
+
+  test("focus view", () => {
+    expect(
+      selectGraphToView({
+        view: {
+          viewStyle: "focus",
+          fadingLinks: true,
+          focusNodeId: "cNode",
+          combineLogical: false,
+        },
+        fullGraph: {
+          nodes: [
+            { id: "aNode" },
+            { id: "bNode" },
+            { id: "cNode" },
+            { id: "dNode" },
+            { id: "eNode" },
+            { id: "fNode" },
+            { id: "gNode" },
+          ],
+          links: [
+            { source: "aNode", target: "bNode" },
+            { source: "bNode", target: "cNode" },
+            { source: "cNode", target: "dNode" },
+            { source: "dNode", target: "eNode" },
+            { source: "eNode", target: "fNode" },
+            { source: "fNode", target: "gNode" },
+          ],
+        },
+        nodeGroups: [
+          {
+            id: "ng-1",
+            active: "true",
+            members: ["dNode", "eNode"],
+          },
+          {
+            id: "ng-2",
+            active: "true",
+            members: ["fNode", "gNode"],
+          },
+        ],
+        ongoingEdit: null,
+      })
+    ).toEqual({
+      nodes: [
+        {
+          id: "cNode",
+          ...standardOutputtedNodeProperties,
+        },
+        {
+          id: "bNode",
+          ...standardOutputtedNodeProperties,
+        },
+      ],
+      links: [
+        { source: "bNode", target: "cNode" },
+        { source: "cNode", target: "ng-1" },
+      ],
+      fadingNodes: [
+        {
+          id: "aNode",
+          ...standardOutputtedFadingNodeProperties,
+        },
+      ],
+      fadingLinks: [
+        { source: "aNode", target: "bNode" },
+        { source: "ng-1", target: "ng-2" },
+      ],
+      nodeGroups: [
+        {
+          id: "ng-1",
+          active: "true",
+          members: ["dNode", "eNode"],
+        },
+      ],
+      fadingNodeGroups: [
+        {
+          id: "ng-2",
+          active: "true",
+          members: ["fNode", "gNode"],
+        },
+      ],
+    });
+  });
+
+  test("can show only the nodes in a subset view", () => {
+    expect(
+      selectGraphToView({
+        view: {
+          viewStyle: "subset",
+          fadingLinks: true,
+          subsetViewId: "aaaa",
+          combineLogical: true,
+        },
+        fullGraph: {
+          nodes: [
+            { id: "aNode" },
+            { id: "-aNode" },
+            { id: "bNode" },
+            { id: "cNode", logicalParent: "bNode" },
+            { id: "dNode" },
+            { id: "eNode" },
+            { id: "fNode", logicalParent: "dNode" },
+            { id: "gNode" },
+            { id: "hNode" },
+            { id: "iNode", logicalParent: "aNode" },
+            { id: "jNode", logicalParent: "hNode" },
+            { id: "kNode", logicalParent: "lNode" },
+            { id: "lNode" },
+          ],
+          links: [
+            { source: "aNode", target: "bNode" },
+            { source: "bNode", target: "cNode" },
+            { source: "cNode", target: "dNode" },
+            { source: "dNode", target: "eNode" },
+            { source: "eNode", target: "fNode" },
+            { source: "fNode", target: "gNode" },
+            { source: "gNode", target: "hNode" },
+            { source: "eNode", target: "iNode" },
+          ],
+        },
+        ongoingEdit: null,
+        selectedPath: null,
+        paths: [],
+        subsetViews: [
+          {
+            id: "aaaa",
+            nodes: ["bNode", "cNode", "dNode", "eNode", "kNode"],
+          },
+        ],
+        nodeGroups: [
+          {
+            id: "ng1",
+            active: true,
+            members: ["-aNode", "bNode"],
+          },
+        ],
+      })
+    ).toEqual({
+      nodes: [
+        {
+          id: "dNode",
+          ...standardOutputtedNodeProperties,
+          logicalChildren: ["fNode"],
+          hasCombinedChildren: true,
+        },
+        {
+          id: "eNode",
+          ...standardOutputtedNodeProperties,
+        },
+        {
+          id: "lNode",
+          ...standardOutputtedNodeProperties,
+          logicalChildren: ["kNode"],
+          hasCombinedChildren: true,
+        },
+      ],
+      links: [
+        { source: "ng1", target: "dNode" },
+        { source: "dNode", target: "eNode" },
+        { source: "eNode", target: "dNode" },
+      ],
+      fadingNodes: [
+        {
+          id: "aNode",
+          logicalChildren: ["iNode"],
+          hasCombinedChildren: true,
+          fx: null,
+          fy: null,
+          pinSourceGroupId: null,
+        },
+        {
+          id: "gNode",
+          logicalChildren: [],
+          hasCombinedChildren: false,
+          fx: null,
+          fy: null,
+          pinSourceGroupId: null,
+        },
+      ],
+      fadingLinks: [
+        { source: "aNode", target: "ng1" },
+        { source: "dNode", target: "gNode" },
+        { source: "eNode", target: "aNode" },
+      ],
+      nodeGroups: [{ id: "ng1", active: true, members: ["-aNode", "bNode"] }],
+      fadingNodeGroups: [],
     });
   });
 });
