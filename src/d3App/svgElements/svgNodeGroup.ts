@@ -21,10 +21,12 @@ export const nodeGroupUpdate = (update: SimulatedNodeGroupSelection) =>
 const color = d3.scaleOrdinal(d3.schemeTableau10);
 
 export const nodeGroupEnter = (
-  enter: d3.Selection<d3.EnterElement, SimulatedNodeGroup, any, any>
+  enter: d3.Selection<d3.EnterElement, SimulatedNodeGroup, any, any>,
+  drag: d3.DragBehavior<SVGGElement, SimulatedNodeGroup, unknown>
 ) =>
   enter
     .append("g")
+    .call((g) => drag(g))
     .call((g) =>
       g
         .append("circle")

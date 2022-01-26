@@ -229,7 +229,7 @@ class NodeSimulation {
     this.svgNodeGroups = this.svgNodeGroups
       .data(dataNodeGroupsToShowWithSimData, (d) => d.id)
       .join(
-        (enter) => nodeGroupEnter(enter),
+        (enter) => nodeGroupEnter(enter, this.dragNodeGroup()),
         (update) => nodeGroupUpdate(update)
       );
 
@@ -375,6 +375,25 @@ class NodeSimulation {
           event.subject.fx = null;
           event.subject.fy = null;
         }
+      });
+
+  dragNodeGroup = () =>
+    d3
+      .drag<SVGGElement, SimulatedNodeGroup>()
+      .on("start", (event) => {
+        if (!event.active) this.simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      })
+      .on("drag", (event) => {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active) this.simulation.alphaTarget(0);
+
+        event.subject.fx = null;
+        event.subject.fy = null;
       });
 }
 
