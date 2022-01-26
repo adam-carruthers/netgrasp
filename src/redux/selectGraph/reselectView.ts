@@ -8,6 +8,7 @@ import type { RootState } from "../reduxStore";
 import type { ReduxLink, ReduxNode } from "../slices/fullGraphSlice";
 import type { Path } from "../slices/pathsSlice";
 import { NodePin } from "../slices/pinGroupsSlice";
+import { NodeGroup } from "../slices/nodeGroupsSlice";
 
 //
 // Basic selectors
@@ -28,6 +29,7 @@ export const selectOngoingEdit = (state: RootState) => state.ongoingEdit;
 export const selectHighlightedNodeId = (state: RootState) =>
   state.highlighted?.hNode || null;
 const selectPinGroups = (state: RootState) => state.pinGroups;
+const selectNodeGroups = (state: RootState) => state.nodeGroups;
 
 export const selectSearchedNodes = createSelector(
   selectFullGraphNodes,
@@ -149,6 +151,16 @@ const selectBeingEditedSubsetViewNodes = createSelector(
       : null
 );
 
+const selectBeingEditedNodeGroupNodes = createSelector(
+  selectNodeGroups,
+  selectOngoingEdit,
+  (nodeGroups, ongoingEdit) =>
+    ongoingEdit?.editType === "toggleNodesInNodeGroup"
+      ? nodeGroups.find((nodeGroup) => nodeGroup.id === ongoingEdit.nodeGroupId)
+          ?.members || null
+      : null
+);
+
 // => combining the active pin groups
 const selectCombinedPinMap = createSelector(
   selectPinGroupsInOngoingEditOrder,
@@ -205,7 +217,7 @@ export const selectFullGraphLogicalCombinedNodes = createSelector(
   selectFullGraphNodes,
   selectCombineLogical,
   (nodes, combineLogical): ReduxNodeWithCombineLogicalInfo[] => {
-    const combiningNodesCount: { [parentNodeId: string]: string[] } =
+    const logicalChildrenByNodeId: { [parentNodeId: string]: string[] } =
       Object.fromEntries(nodes.map((node) => [node.id, []]));
 
     const uncombinedNodes: ReduxNode[] = [];
@@ -216,7 +228,7 @@ export const selectFullGraphLogicalCombinedNodes = createSelector(
         return;
       }
 
-      combiningNodesCount[node.logicalParent].push(node.id);
+      logicalChildrenByNodeId[node.logicalParent].push(node.id);
     });
 
     const uncombinedNodesWithCombineInfo: ReduxNodeWithCombineLogicalInfo[] = (
@@ -224,50 +236,152 @@ export const selectFullGraphLogicalCombinedNodes = createSelector(
     ) // If combine logical send only nodes that aren't a child of another
       .map((node) => ({
         ...node,
-        logicalChildren: combiningNodesCount[node.id],
+        logicalChildren: logicalChildrenByNodeId[node.id],
         hasCombinedChildren:
-          combineLogical && !!combiningNodesCount[node.id]?.length,
+          combineLogical && !!logicalChildrenByNodeId[node.id]?.length,
       }));
 
     return uncombinedNodesWithCombineInfo;
   }
 );
 
-const selectFullGraphLogicalCombinedNodesById = createSelector(
-  selectFullGraphLogicalCombinedNodes,
-  (nodes) => Object.fromEntries(nodes.map((node) => [node.id, node]))
+//
+// Node Groups
+//
+
+export const selectNodeGroupDeviceMap = createSelector(
+  selectNodeGroups,
+  (nodeGroups) => {
+    const activeNodeGroups = (nodeGroups || []).filter(
+      (nodeGroup) => nodeGroup.active
+    );
+
+    const nodeIdToNodeGroup: { [nodeId: string]: string } =
+      activeNodeGroups.reduce(
+        (prev, nodeGroup) => ({
+          ...Object.fromEntries(
+            nodeGroup.members.map((memberNodeId) => [
+              memberNodeId,
+              nodeGroup.id,
+            ])
+          ),
+          // Putting prev after means earlier node groups get preference
+          ...prev,
+        }),
+        {} as { [nodeId: string]: string }
+      );
+
+    return nodeIdToNodeGroup;
+  }
 );
 
-export const selectFullGraphLogicalCombinedLinks = createSelector(
-  selectFullGraphLinks,
+const applyMapToObjectValues = (
+  objectToTransform: { [k: string]: string },
+  mapToUse: { [k: string]: string }
+) => {
+  const out: { [k: string]: string } = {};
+
+  for (const key of Object.keys(objectToTransform)) {
+    out[key] = mapToUse[objectToTransform[key]] || objectToTransform[key];
+  }
+
+  return out;
+};
+
+export const selectAllCombinesNodeIdMap = createSelector(
+  selectNodeGroupDeviceMap,
   selectCombineLogicalChildDeviceMap,
+  (nodeGroupCombineMap, logicalCombineMap) => ({
+    ...nodeGroupCombineMap,
+    // Logical combines take priority
+    // but if the logical parent was node group combined
+    // then the children will be node group combined
+    ...applyMapToObjectValues(logicalCombineMap || {}, nodeGroupCombineMap),
+  })
+);
+
+const selectNodeGroupsById = createSelector(selectNodeGroups, (nodeGroups) =>
+  Object.fromEntries(
+    (nodeGroups || []).map((nodeGroup) => [nodeGroup.id, nodeGroup])
+  )
+);
+
+const selectCombineGraphNodesNodeGroups = createSelector(
+  selectFullGraphLogicalCombinedNodes,
+  selectAllCombinesNodeIdMap,
+  selectNodeGroupsById,
+  (nodes, combinesMap, nodeGroupsById) => {
+    const outNodeGroupsSet = new Set<NodeGroup>();
+    const outNodes: ReduxNodeWithCombineLogicalInfo[] = [];
+
+    nodes.forEach((node) => {
+      const combineDestination = combinesMap[node.id];
+
+      if (combineDestination === undefined) {
+        outNodes.push(node);
+      } else {
+        outNodeGroupsSet.add(nodeGroupsById[combineDestination]);
+      }
+    });
+
+    return {
+      nodes: outNodes,
+      nodeGroups: Array.from(outNodeGroupsSet),
+    };
+  }
+);
+
+const selectFullViewNodeGroups = createSelector(
+  selectCombineGraphNodesNodeGroups,
+  ({ nodeGroups }) => nodeGroups
+);
+
+//
+// End of combine stage
+//
+
+export const selectCombinedGraphNodes = createSelector(
+  selectCombineGraphNodesNodeGroups,
+  ({ nodes }) => nodes
+);
+
+export const selectCombinedGraphLinks = createSelector(
+  selectFullGraphLinks,
+  selectAllCombinesNodeIdMap,
   (links, logicalMap): ReduxLink[] => {
     if (!logicalMap) return links;
 
     return links
       .map(({ source, target }) => ({
-        source: source in logicalMap ? logicalMap[source] : source,
-        target: target in logicalMap ? logicalMap[target] : target,
+        source: logicalMap[source] || source,
+        target: logicalMap[target] || target,
       }))
       .filter(({ source, target }) => source !== target);
   }
 );
 
-const selectBeingViewedSubsetViewLogicallyMergedNodeIds = createSelector(
+const selectCombinedGraphNodesById = createSelector(
+  selectCombinedGraphNodes,
+  (nodes) => Object.fromEntries(nodes.map((node) => [node.id, node]))
+);
+
+//
+// After combine other stuff
+//
+
+const selectBeingViewedSubsetViewCombinedNodeIds = createSelector(
   selectSubsetViews,
   selectView,
-  selectCombineLogicalChildDeviceMap,
-  (subsetViews, view, logicalMap) => {
+  selectAllCombinesNodeIdMap,
+  (subsetViews, view, combinesMap) => {
     if (view.viewStyle !== "subset") return null;
 
     const nodeIds =
       subsetViews.find((subsetView) => subsetView.id === view.subsetViewId)
         ?.nodes || [];
 
-    if (!logicalMap) return nodeIds;
-
-    const nodeIdsAfterMerge = nodeIds.map((nodeId) =>
-      nodeId in logicalMap ? logicalMap[nodeId] : nodeId
+    const nodeIdsAfterMerge = nodeIds.map(
+      (nodeId) => combinesMap[nodeId] || nodeId
     );
 
     // Get rid of duplicates
@@ -295,19 +409,17 @@ export const selectSelectedPathNodeIdSteps = createSelector(
   selectSelectedPath,
   (selectedPath) => selectedPath?.steps.map((step) => step.nodeId) || null
 );
-const selectSelectedPathNodeIdStepsLogicalMerged = createSelector(
+const selectSelectedPathNodeIdStepsCombined = createSelector(
   selectSelectedPathNodeIdSteps,
-  selectCombineLogicalChildDeviceMap,
-  (nodeIdSteps, logicalMap): string[] | null => {
-    if (!nodeIdSteps || !logicalMap) return nodeIdSteps;
+  selectAllCombinesNodeIdMap,
+  (nodeIdSteps, combinesMap): string[] | null => {
+    if (!nodeIdSteps || !combinesMap) return nodeIdSteps;
 
-    return nodeIdSteps.map((nodeId) =>
-      nodeId in logicalMap ? logicalMap[nodeId] : nodeId
-    );
+    return nodeIdSteps.map((nodeId) => combinesMap[nodeId] || nodeId);
   }
 );
 export const selectSelectedPathNodeIdStepsLimited = createSelector(
-  selectSelectedPathNodeIdStepsLogicalMerged,
+  selectSelectedPathNodeIdStepsCombined,
   selectPathView,
   (pathNodeIdSteps, pathView) => {
     if (!pathNodeIdSteps || pathView.showFull) return pathNodeIdSteps;
@@ -324,8 +436,8 @@ export const selectSelectedPathNodeIdStepsToView =
 //
 const selectBeingViewedPathNodeIdsLinks = createSelector(
   selectView,
-  selectSelectedPathNodeIdStepsLogicalMerged,
-  selectFullGraphLogicalCombinedLinks,
+  selectSelectedPathNodeIdStepsCombined,
+  selectCombinedGraphLinks,
   (view, pathSteps, fullGraphLinks) => {
     if (view.viewStyle !== "path") return null;
 
@@ -346,8 +458,8 @@ const selectBeingViewedPathNodeIdsLinks = createSelector(
   }
 );
 const selectBeingViewedSubsetViewNodeIdsLinks = createSelector(
-  selectBeingViewedSubsetViewLogicallyMergedNodeIds,
-  selectFullGraphLogicalCombinedLinks,
+  selectBeingViewedSubsetViewCombinedNodeIds,
+  selectCombinedGraphLinks,
   (subsetViewNodeIds, fullGraphLinks) => {
     if (!subsetViewNodeIds) return null;
 
@@ -369,17 +481,14 @@ const selectBeingViewedSubsetViewNodeIdsLinks = createSelector(
 );
 const selectBeingViewedFocussedNodeIdsLinks = createSelector(
   selectView,
-  selectFullGraphLogicalCombinedLinks,
-  selectCombineLogicalChildDeviceMap,
+  selectCombinedGraphLinks,
+  selectAllCombinesNodeIdMap,
   selectFocusViewDistance,
-  (view, fullGraphLinks, logicalMap, focusViewDistance) => {
+  (view, fullGraphLinks, combinesMap, focusViewDistance) => {
     if (view.viewStyle !== "focus") return null;
 
     let { focusNodeId } = view;
-    if (logicalMap) {
-      focusNodeId =
-        focusNodeId in logicalMap ? logicalMap[focusNodeId] : focusNodeId;
-    }
+    focusNodeId = combinesMap[focusNodeId] || focusNodeId;
 
     return focusViewGetSubgraph(
       fullGraphLinks,
@@ -424,26 +533,36 @@ const selectNodeIdsLinksForViewing = createSelector(
 // => Taking the nodeIds from the earlier calculations and mapping them to actual nodes
 const selectNodesLinksForViewing = createSelector(
   selectNodeIdsLinksForViewing,
-  selectFullGraphLogicalCombinedNodesById,
-  (nodeIdsLinksForViewing, nodesById) => {
+  selectCombinedGraphNodesById,
+  selectNodeGroupsById,
+  (nodeIdsLinksForViewing, nodesById, nodeGroupsById) => {
     if (nodeIdsLinksForViewing === null) return null;
 
     const { nodeIds, fadingNodeIds, ...linksRest } = nodeIdsLinksForViewing;
     return {
       ...linksRest,
-      // eslint-disable-next-line no-console
-      nodes: nodeIds.map(
-        (nodeId) => nodesById[nodeId] || console.error("unfound node")
-      ),
-      // eslint-disable-next-line no-console
-      fadingNodes: fadingNodeIds.map(
-        (nodeId) => nodesById[nodeId] || console.error("unfound node")
-      ),
+
+      nodes: nodeIds
+        .map((nodeId) => nodesById[nodeId])
+        .filter((node) => !!node),
+
+      fadingNodes: fadingNodeIds
+        .map((nodeId) => nodesById[nodeId])
+        .filter((node) => !!node),
+
+      nodeGroups: nodeIds
+        .map((nodeId) => nodeGroupsById[nodeId])
+        .filter((node) => !!node),
+
+      fadingNodeGroups: fadingNodeIds
+        .map((nodeId) => nodeGroupsById[nodeId])
+        .filter((node) => !!node),
     };
   }
 );
 
 const emptyFadingNodes: ReduxNodeWithCombineLogicalInfo[] = [];
+const emptyFadingNodeGroups: NodeGroup[] = [];
 const emptyFadingLinks: ReduxLink[] = [];
 
 // => Remove fading links if the view so demands
@@ -458,6 +577,7 @@ const selectNodesLinksRemoveFadingLinks = createSelector(
     return {
       ...nodesLinksForViewing,
       fadingNodes: emptyFadingNodes,
+      fadingNodeGroups: emptyFadingNodeGroups,
       fadingLinks: emptyFadingLinks,
     };
   }
@@ -468,9 +588,10 @@ const selectNodesLinksRemoveFadingLinks = createSelector(
 //
 const selectNodesLinksIncludingFullGraph = createSelector(
   selectNodesLinksRemoveFadingLinks,
-  selectFullGraphLogicalCombinedNodes,
-  selectFullGraphLogicalCombinedLinks,
-  (nodesLinksForViewing, nodes, links) => {
+  selectCombinedGraphNodes,
+  selectCombinedGraphLinks,
+  selectFullViewNodeGroups,
+  (nodesLinksForViewing, nodes, links, fullGraphNodeGroups) => {
     if (nodesLinksForViewing) return nodesLinksForViewing;
 
     return {
@@ -478,6 +599,8 @@ const selectNodesLinksIncludingFullGraph = createSelector(
       links,
       fadingNodes: emptyFadingNodes,
       fadingLinks: emptyFadingLinks,
+      nodeGroups: fullGraphNodeGroups,
+      fadingNodeGroups: emptyFadingNodeGroups,
     };
   }
 );
@@ -504,6 +627,8 @@ const selectNodesLinksPinned = createSelector(
     fadingNodes: ReduxNodeWithExtraPinInfo[];
     links: ReduxLink[];
     fadingLinks: ReduxLink[];
+    nodeGroups: NodeGroup[];
+    fadingNodeGroups: NodeGroup[];
   } => ({
     ...viewGraph,
     nodes: viewGraph.nodes.map((node) => ({
@@ -534,6 +659,8 @@ const selectNodesLinksIncludingEditSubsetTransparency = createSelector(
     fadingNodes: ReduxNodeWithExtraPinInfo[];
     links: ReduxLink[];
     fadingLinks: ReduxLink[];
+    nodeGroups: NodeGroup[];
+    fadingNodeGroups: NodeGroup[];
   } => ({
     ...nodesLinksForViewing,
     nodes: nodesLinksForViewing.nodes.map((node) => ({
@@ -563,6 +690,8 @@ const selectNodesLinksIncludingLogicalGroupTransparency = createSelector(
     fadingNodes: ReduxNodeWithExtraPinInfo[];
     links: ReduxLink[];
     fadingLinks: ReduxLink[];
+    nodeGroups: NodeGroup[];
+    fadingNodeGroups: NodeGroup[];
   } => {
     if (ongoingEdit?.editType !== "toggleNodesInLogicalGroup") {
       return {
@@ -609,6 +738,26 @@ const selectNodesLinksIncludingPinGroupTransparency = createSelector(
   }
 );
 
-export const selectGraphToView = selectNodesLinksIncludingPinGroupTransparency;
+const selectNodesLinksIncludingEditNodeGroupTransparency = createSelector(
+  selectNodesLinksIncludingPinGroupTransparency,
+  selectBeingEditedNodeGroupNodes,
+  (nodesLinksForViewing, beingEditedGroupNodes) => ({
+    ...nodesLinksForViewing,
+    nodes: nodesLinksForViewing.nodes.map((node) => ({
+      ...node,
+      ongoingEditIsTransparent: beingEditedGroupNodes
+        ? beingEditedGroupNodes.every(
+            (nodeInGroupId) => node.id !== nodeInGroupId
+          )
+        : node.ongoingEditIsTransparent,
+    })),
+  })
+);
+
+export const selectGraphToView =
+  selectNodesLinksIncludingEditNodeGroupTransparency;
 export type FullGraphSelectedToView = ReturnType<typeof selectGraphToView>;
 export type ReduxNodeSelectedToView = FullGraphSelectedToView["nodes"][0];
+export type ReduxFadingNodeSelectedToView =
+  FullGraphSelectedToView["fadingNodes"][0];
+export type NodeGroupSelectedToView = FullGraphSelectedToView["nodeGroups"][0];

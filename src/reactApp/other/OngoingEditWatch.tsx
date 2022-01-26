@@ -1,6 +1,7 @@
 import React from "react";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { haltOngoingEdit } from "../../redux/slices/ongoingEditSlice";
+import { setCombineLogical } from "../../redux/slices/viewSlice";
 
 const OngoingEditWatch = () => {
   const ongoingEdit = useAppSelector((state) => state.ongoingEdit);
@@ -20,7 +21,16 @@ const OngoingEditWatch = () => {
         Cancel
       </button>
       {combineLogical && (
-        <div>⚠ Edits applied won&apos;t be applied to logical children</div>
+        <div>
+          ⚠ Edits applied won&apos;t be applied to logical children{" "}
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={() => dispatch(setCombineLogical(false))}
+          >
+            Turn off combine logical
+          </button>
+        </div>
       )}
     </div>
   );

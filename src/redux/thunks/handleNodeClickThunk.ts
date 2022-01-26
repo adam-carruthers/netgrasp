@@ -8,6 +8,10 @@ import {
   setNewParentOfExistingLogicalGroup,
 } from "../slices/fullGraphSlice";
 import { highlightNode } from "../slices/highlightedSlice";
+import {
+  addNodeToNodeGroup,
+  removeNodeFromNodeGroup,
+} from "../slices/nodeGroupsSlice";
 import { haltOngoingEdit } from "../slices/ongoingEditSlice";
 import { addNodeToPath } from "../slices/pathsSlice";
 import {
@@ -179,6 +183,22 @@ const handleNodeClickThunk =
         dispatch(
           removeNodeFromPinGroup({
             pinGroupId: ongoingEdit.pinGroupId,
+            nodeId: clickedDataNode.id,
+          })
+        );
+      }
+    } else if (ongoingEdit?.editType === "toggleNodesInNodeGroup") {
+      if (clickedDataNode.ongoingEditIsTransparent) {
+        dispatch(
+          addNodeToNodeGroup({
+            nodeGroupId: ongoingEdit.nodeGroupId,
+            nodeId: clickedDataNode.id,
+          })
+        );
+      } else {
+        dispatch(
+          removeNodeFromNodeGroup({
+            nodeGroupId: ongoingEdit.nodeGroupId,
             nodeId: clickedDataNode.id,
           })
         );

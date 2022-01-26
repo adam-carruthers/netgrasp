@@ -19,6 +19,7 @@ const FileTab = () => (
               subsetViews: state.subsetViews,
               paths: state.paths,
               pinGroups: state.pinGroups,
+              nodeGroups: state.nodeGroups,
             })
           );
           NotificationManager.success(

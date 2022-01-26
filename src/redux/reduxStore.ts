@@ -24,6 +24,7 @@ import paths from "./slices/pathsSlice";
 import selectedPath from "./slices/selectedPathSlice";
 import pathView from "./slices/pathViewSlice";
 import pinGroups from "./slices/pinGroupsSlice";
+import nodeGroups from "./slices/nodeGroupsSlice";
 
 const rootReducer = combineReducers({
   fullGraph,
@@ -35,6 +36,7 @@ const rootReducer = combineReducers({
   selectedPath,
   pathView,
   pinGroups,
+  nodeGroups,
 });
 
 const persistConfig = {

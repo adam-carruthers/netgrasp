@@ -66,7 +66,7 @@ const PinGroup: React.FC<{ pinGroup: PinGroupType }> = ({ pinGroup }) => {
           {thisPinGroupIsBeingEdited
             ? "Unchangable during edit"
             : pinGroup.active
-            ? "Disactivate"
+            ? "Deactivate"
             : "Activate"}
         </button>
         <DangerousButton

@@ -1,11 +1,19 @@
 import * as d3 from "d3";
-import type { ReduxNodeSelectedToView } from "../redux/selectGraph/reselectView";
-import type { ReduxLink, ReduxNode } from "../redux/slices/fullGraphSlice";
+import type {
+  NodeGroupSelectedToView,
+  ReduxFadingNodeSelectedToView,
+  ReduxNodeSelectedToView,
+} from "../redux/selectGraph/reselectView";
+import type { ReduxLink } from "../redux/slices/fullGraphSlice";
 import {
+  SimulatedFadingNode,
   SimulatedHighlightedNodeSelection,
+  SimulatedItem,
   SimulatedLink,
   SimulatedLinkSelection,
   SimulatedNode,
+  SimulatedNodeGroup,
+  SimulatedNodeGroupSelection,
   SimulatedNodeSelection,
   SimulatedPathLinkSelection,
   SimulatedPathNodeSelection,
@@ -45,10 +53,19 @@ import {
   createNoNodesWarning,
   createPathNotAllVisibleWarning,
 } from "./svgElements/svgWarnings";
+import { NodeGroup } from "../redux/slices/nodeGroupsSlice";
+import {
+  createNodeGroupSelector,
+  nodeGroupEnter,
+  nodeGroupTick,
+  nodeGroupUpdate,
+} from "./svgElements/svgNodeGroup";
 
 class NodeSimulation {
   svgNodes: SimulatedNodeSelection;
   svgLinks: SimulatedLinkSelection;
+
+  svgNodeGroups: SimulatedNodeGroupSelection;
 
   svgPathNodes: SimulatedPathNodeSelection;
   svgPathLinks: SimulatedPathLinkSelection;
@@ -61,7 +78,7 @@ class NodeSimulation {
   // Need this to be able to set visibility when hNode visible
   goToHighlightedNodeButton: d3.Selection<SVGGElement, any, any, any>;
 
-  simulation: d3.Simulation<SimulatedNode, SimulatedLink>;
+  simulation: d3.Simulation<SimulatedItem, SimulatedLink>;
 
   constructor(
     contentSvg: d3.Selection<SVGSVGElement, any, any, any>,
@@ -73,6 +90,7 @@ class NodeSimulation {
     this.svgPathLinks = createPathLinkSelector(contentSvg);
     this.svgPathNodes = createPathNodeSelector(contentSvg);
     this.svgNodes = createNodeSelector(contentSvg);
+    this.svgNodeGroups = createNodeGroupSelector(contentSvg);
 
     this.goToHighlightedNodeButton = goToHighlightedNodeButton;
 
@@ -80,12 +98,12 @@ class NodeSimulation {
     this.pathNotAllVisibleWarning = createPathNotAllVisibleWarning(controlsSvg);
 
     this.simulation = d3
-      .forceSimulation<SimulatedNode>()
+      .forceSimulation<SimulatedItem>()
       .force("charge", d3.forceManyBody().strength(-1800))
       .force(
         "link",
         d3
-          .forceLink<SimulatedNode, SimulatedLink>()
+          .forceLink<SimulatedItem, SimulatedLink>()
           .id((d) => d.id)
           .distance(150)
       )
@@ -101,18 +119,23 @@ class NodeSimulation {
     linkTick(this.svgLinks);
     pathNodeTick(this.svgPathNodes);
     pathLinkTick(this.svgPathLinks);
+    nodeGroupTick(this.svgNodeGroups);
   };
 
   updateVisibleGraph = ({
     nodes: dataNodesToShow,
     links: dataLinksToShow,
+    nodeGroups: dataNodeGroupsToShow,
     fadingNodes: dataFadingNodesToShow,
     fadingLinks: dataFadingLinksToShow,
+    fadingNodeGroups: dataFadingNodeGroupsToShow,
   }: {
     nodes: ReduxNodeSelectedToView[];
     links: ReduxLink[];
-    fadingNodes: ReduxNode[];
+    nodeGroups: NodeGroup[];
+    fadingNodes: ReduxFadingNodeSelectedToView[];
     fadingLinks: ReduxLink[];
+    fadingNodeGroups: NodeGroup[];
   }) => {
     // The this.simulation.nodes() data has:
     // - the old nodes dataNodes info, which we don't care about
@@ -127,22 +150,44 @@ class NodeSimulation {
     // The type is actually wrong.
     // It is not guaranteed that the nodes in the list will have simulation properties
     // aka x, y, vx, vy, index
-    // But that will be true immediately on the first tick.
+    // But that will be true immediately after the first tick.
     const dataNodesToShowWithSimData: SimulatedNode[] = dataNodesToShow.map(
-      (d) => ({ ...oldNodesById[d.id], ...d, fading: false })
+      (d) => ({
+        ...oldNodesById[d.id],
+        ...d,
+        fading: false,
+        itemType: "node",
+      })
     );
-    const dataFadingNodesToShowWithSimData: SimulatedNode[] =
+    const dataFadingNodesToShowWithSimData: SimulatedFadingNode[] =
       dataFadingNodesToShow.map((d) => ({
         ...oldNodesById[d.id],
         ...d,
         fading: true,
+        itemType: "fadingNode",
+      }));
+    const dataNodeGroupsToShowWithSimData: SimulatedNodeGroup[] =
+      dataNodeGroupsToShow.map((d) => ({
+        ...oldNodesById[d.id],
+        ...d,
+        fading: false,
+        itemType: "nodeGroup",
+      }));
+    const dataFadingNodeGroupsToShowWithSimData: SimulatedNodeGroup[] =
+      dataFadingNodeGroupsToShow.map((d) => ({
+        ...oldNodesById[d.id],
+        ...d,
+        fading: true,
+        itemType: "nodeGroup",
       }));
 
-    const allNewNodes = [
+    const allNewNodes: SimulatedItem[] = [
       ...dataNodesToShowWithSimData,
+      ...dataNodeGroupsToShowWithSimData,
       ...dataFadingNodesToShowWithSimData,
+      ...dataFadingNodeGroupsToShowWithSimData,
     ];
-    const allNewNodesById = Object.fromEntries(
+    const allNewItemsById = Object.fromEntries(
       allNewNodes.map((d) => [d.id, d])
     );
 
@@ -150,15 +195,15 @@ class NodeSimulation {
       (d) => ({
         ...d,
         fading: false,
-        source: allNewNodesById[d.source],
-        target: allNewNodesById[d.target],
+        source: allNewItemsById[d.source],
+        target: allNewItemsById[d.target],
       })
     );
     const dataFadingLinksToShowWithSimData = dataFadingLinksToShow.map((d) => ({
       ...d,
       fading: true,
-      source: allNewNodesById[d.source],
-      target: allNewNodesById[d.target],
+      source: allNewItemsById[d.source],
+      target: allNewItemsById[d.target],
     }));
     const dataAllLinksToShow = [
       ...dataLinksToShowWithSimData,
@@ -179,12 +224,22 @@ class NodeSimulation {
       .join(
         (enter) => linkEnter(enter),
         (update) => linkUpdate(update)
-      ) as unknown as SimulatedLinkSelection;
+      );
+
+    this.svgNodeGroups = this.svgNodeGroups
+      .data(dataNodeGroupsToShowWithSimData, (d) => d.id)
+      .join(
+        (enter) => nodeGroupEnter(enter, this.dragNodeGroup()),
+        (update) => nodeGroupUpdate(update)
+      );
 
     this.simulation.nodes(allNewNodes);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    this.simulation.force("link").links(dataAllLinksToShow);
+    (
+      this.simulation.force("link") as d3.ForceLink<
+        SimulatedItem,
+        SimulatedLink
+      >
+    ).links(dataAllLinksToShow);
     this.simulation.alpha(1).restart();
 
     this.noNodesWarning.style(
@@ -193,15 +248,19 @@ class NodeSimulation {
     );
   };
 
-  updateNodeInfo = (graphToView: { nodes: ReduxNodeSelectedToView[] }) => {
+  updateNodeInfo = (graphToView: {
+    nodes: ReduxNodeSelectedToView[];
+    nodeGroups: NodeGroupSelectedToView[];
+  }) => {
     const fullGraphNodesById = Object.fromEntries(
-      graphToView.nodes.map((d) => [d.id, d])
+      [...graphToView.nodes, ...graphToView.nodeGroups].map((d) => [d.id, d])
     );
     this.simulation.nodes().forEach((d) => {
       Object.assign(d, fullGraphNodesById[d.id]);
     });
 
     nodeUpdate(this.svgNodes);
+    nodeGroupUpdate(this.svgNodeGroups);
   };
 
   updateHighlighted = (highlighted: string | null) => {
@@ -285,6 +344,9 @@ class NodeSimulation {
     this.simulation.alpha(0.8).restart();
   };
 
+  getSimulatedNodeById = (nodeId: string) =>
+    this.simulation.nodes().find(({ id }) => id === nodeId);
+
   drag = () =>
     d3
       .drag<SVGGElement, SimulatedNode>()
@@ -313,6 +375,25 @@ class NodeSimulation {
           event.subject.fx = null;
           event.subject.fy = null;
         }
+      });
+
+  dragNodeGroup = () =>
+    d3
+      .drag<SVGGElement, SimulatedNodeGroup>()
+      .on("start", (event) => {
+        if (!event.active) this.simulation.alphaTarget(0.3).restart();
+        event.subject.fx = event.subject.x;
+        event.subject.fy = event.subject.y;
+      })
+      .on("drag", (event) => {
+        event.subject.fx = event.x;
+        event.subject.fy = event.y;
+      })
+      .on("end", (event, d) => {
+        if (!event.active) this.simulation.alphaTarget(0);
+
+        event.subject.fx = null;
+        event.subject.fy = null;
       });
 }
 
