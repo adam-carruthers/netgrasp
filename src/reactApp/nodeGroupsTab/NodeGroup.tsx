@@ -24,7 +24,7 @@ const NodeGroup: React.FC<{ nodeGroup: NodeGroup }> = ({ nodeGroup }) => {
       <div
         className={
           "bg-light-grey py-1 px-1 me-2" +
-          (nodeGroup.active ? " selected-tab-tem" : "")
+          (nodeGroup.active ? " selected-tab-item" : "")
         }
         style={{ width: 250 }}
       >

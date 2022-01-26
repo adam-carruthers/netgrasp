@@ -151,6 +151,16 @@ const selectBeingEditedSubsetViewNodes = createSelector(
       : null
 );
 
+const selectBeingEditedNodeGroupNodes = createSelector(
+  selectNodeGroups,
+  selectOngoingEdit,
+  (nodeGroups, ongoingEdit) =>
+    ongoingEdit?.editType === "toggleNodesInNodeGroup"
+      ? nodeGroups.find((nodeGroup) => nodeGroup.id === ongoingEdit.nodeGroupId)
+          ?.members || null
+      : null
+);
+
 // => combining the active pin groups
 const selectCombinedPinMap = createSelector(
   selectPinGroupsInOngoingEditOrder,
@@ -728,7 +738,24 @@ const selectNodesLinksIncludingPinGroupTransparency = createSelector(
   }
 );
 
-export const selectGraphToView = selectNodesLinksIncludingPinGroupTransparency;
+const selectNodesLinksIncludingEditNodeGroupTransparency = createSelector(
+  selectNodesLinksIncludingPinGroupTransparency,
+  selectBeingEditedNodeGroupNodes,
+  (nodesLinksForViewing, beingEditedGroupNodes) => ({
+    ...nodesLinksForViewing,
+    nodes: nodesLinksForViewing.nodes.map((node) => ({
+      ...node,
+      ongoingEditIsTransparent: beingEditedGroupNodes
+        ? beingEditedGroupNodes.every(
+            (nodeInGroupId) => node.id !== nodeInGroupId
+          )
+        : node.ongoingEditIsTransparent,
+    })),
+  })
+);
+
+export const selectGraphToView =
+  selectNodesLinksIncludingEditNodeGroupTransparency;
 export type FullGraphSelectedToView = ReturnType<typeof selectGraphToView>;
 export type ReduxNodeSelectedToView = FullGraphSelectedToView["nodes"][0];
 export type ReduxFadingNodeSelectedToView =
