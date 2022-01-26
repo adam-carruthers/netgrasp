@@ -1,22 +1,42 @@
 import type * as d3 from "d3";
-import { ReduxNodeSelectedToView } from "../redux/selectGraph/reselectView";
+import {
+  NodeGroupSelectedToView,
+  ReduxFadingNodeSelectedToView,
+  ReduxNodeSelectedToView,
+} from "../redux/selectGraph/reselectView";
 
-export interface SimulatedNode
-  extends ReduxNodeSelectedToView,
-    Required<d3.SimulationNodeDatum> {
+export interface SimulatedItem extends Required<d3.SimulationNodeDatum> {
+  id: string;
   fading: boolean;
+  itemType: "node" | "fadingNode" | "nodeGroup";
+}
+
+export interface SimulatedNode extends ReduxNodeSelectedToView, SimulatedItem {
+  itemType: "node";
+}
+
+export interface SimulatedFadingNode
+  extends ReduxFadingNodeSelectedToView,
+    SimulatedItem {
+  itemType: "fadingNode";
+}
+
+export interface SimulatedNodeGroup
+  extends NodeGroupSelectedToView,
+    SimulatedItem {
+  itemType: "nodeGroup";
 }
 
 export interface SimulatedLink {
-  source: SimulatedNode;
-  target: SimulatedNode;
+  source: SimulatedItem;
+  target: SimulatedItem;
   fading?: boolean;
 }
 
 export interface SimulatedPathNode {
   i: number;
   angle: number;
-  dataNode: SimulatedNode;
+  dataNode: SimulatedItem;
 }
 
 export type SimulatedNodeSelection = d3.Selection<
@@ -35,7 +55,7 @@ export type SimulatedLinkSelection = d3.Selection<
 
 export type SimulatedHighlightedNodeSelection = d3.Selection<
   SVGCircleElement,
-  SimulatedNode,
+  SimulatedItem,
   any,
   any
 >;

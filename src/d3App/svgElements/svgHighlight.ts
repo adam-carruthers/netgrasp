@@ -1,5 +1,5 @@
 import type * as d3 from "d3";
-import { SimulatedHighlightedNodeSelection, SimulatedNode } from "../common";
+import { SimulatedHighlightedNodeSelection, SimulatedItem } from "../common";
 
 export const createHighlightSelector = (
   parent: d3.Selection<SVGSVGElement, any, any, any>
@@ -7,10 +7,10 @@ export const createHighlightSelector = (
   parent
     .append("g")
     .selectAll<SVGCircleElement, any>("circle")
-    .data<SimulatedNode>([]);
+    .data<SimulatedItem>([]);
 
 export const highlightEnter = (
-  enter: d3.Selection<d3.EnterElement, SimulatedNode, any, any>
+  enter: d3.Selection<d3.EnterElement, SimulatedItem, any, any>
 ) =>
   enter.append("circle").attr("r", 100).attr("fill", "url('#selectGradient')");
 

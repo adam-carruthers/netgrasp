@@ -5,22 +5,37 @@ import {
   FullGraphSelectedToView,
   selectSelectedPathNodeIdStepsToView,
 } from "../redux/selectGraph/reselectView";
+import { ReduxLink } from "../redux/slices/fullGraphSlice";
 import type NodeSimulation from "./nodeSimulation";
+
+const isNodeRefreshNeeded = (
+  oldNodes: { id: string }[],
+  newNodes: { id: string }[]
+) =>
+  oldNodes.length !== newNodes.length ||
+  oldNodes.some(({ id }, i) => id !== newNodes[i].id);
+
+const isLinkRefreshNeeded = (oldLinks: ReduxLink[], newLinks: ReduxLink[]) =>
+  oldLinks.length !== newLinks.length ||
+  oldLinks.some(
+    ({ source, target }, i) =>
+      source !== newLinks[i].source || target !== newLinks[i].target
+  );
 
 const reduxSubscribe = (simulation: NodeSimulation) => {
   // Section 1 - Track redux store changes to only refresh on necessary updates
-  let currentGraphToView: FullGraphSelectedToView;
+  let currentViewGraph: FullGraphSelectedToView;
   let currentHighlightedNodeId: string | null;
   let currentSelectedPathNodeIdSteps: string[] | null;
 
   function handleStoreEvent() {
-    const previousGraphToView = currentGraphToView;
+    const previousViewGraph = currentViewGraph;
     const previousHighlightedNodeId = currentHighlightedNodeId;
     const previousSelectedPathNodeIdSteps = currentSelectedPathNodeIdSteps;
 
     const state = store.getState();
 
-    currentGraphToView = selectGraphToView(state);
+    currentViewGraph = selectGraphToView(state);
     currentHighlightedNodeId = selectHighlightedNodeId(state);
     currentSelectedPathNodeIdSteps = selectSelectedPathNodeIdStepsToView(state);
 
@@ -52,39 +67,35 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
     if (
       // Triggers that change the nodes or links present on the svg
       // This will need to cause a full rerender and a change of the simulation, etc
-      previousGraphToView === undefined ||
-      previousGraphToView.nodes.length !== currentGraphToView.nodes.length ||
-      previousGraphToView.fadingNodes.length !==
-        currentGraphToView.fadingNodes.length ||
-      previousGraphToView.links.length !== currentGraphToView.links.length ||
-      previousGraphToView.fadingLinks.length !==
-        currentGraphToView.fadingLinks.length ||
-      previousGraphToView.nodes.some(
-        (node, i) => node.id !== currentGraphToView.nodes[i].id
+      previousViewGraph === undefined ||
+      isNodeRefreshNeeded(previousViewGraph.nodes, currentViewGraph.nodes) ||
+      isNodeRefreshNeeded(
+        previousViewGraph.fadingNodes,
+        currentViewGraph.fadingNodes
       ) ||
-      previousGraphToView.nodes.some(
-        (node, i) => node.id !== currentGraphToView.nodes[i].id
+      isNodeRefreshNeeded(
+        previousViewGraph.nodeGroups,
+        currentViewGraph.nodeGroups
       ) ||
-      previousGraphToView.links.some(
-        (link, i) =>
-          link.source !== currentGraphToView.links[i].source ||
-          link.target !== currentGraphToView.links[i].target
+      isNodeRefreshNeeded(
+        previousViewGraph.fadingNodeGroups,
+        currentViewGraph.fadingNodeGroups
       ) ||
-      previousGraphToView.fadingLinks.some(
-        (link, i) =>
-          link.source !== currentGraphToView.fadingLinks[i].source ||
-          link.target !== currentGraphToView.fadingLinks[i].target
+      isLinkRefreshNeeded(previousViewGraph.links, currentViewGraph.links) ||
+      isLinkRefreshNeeded(
+        previousViewGraph.fadingLinks,
+        currentViewGraph.fadingLinks
       )
     ) {
-      simulation.updateVisibleGraph(currentGraphToView);
+      simulation.updateVisibleGraph(currentViewGraph);
       // If the visible graph is updated
       // Highlighted and path need to be changed as well
       // To bind their SVG elements to the new simulation
       simulation.updateHighlighted(currentHighlightedNodeId);
       simulation.updatePath(currentSelectedPathNodeIdSteps);
     } else {
-      if (previousGraphToView !== currentGraphToView) {
-        simulation.updateNodeInfo(currentGraphToView);
+      if (previousViewGraph !== currentViewGraph) {
+        simulation.updateNodeInfo(currentViewGraph);
       }
       if (previousHighlightedNodeId !== currentHighlightedNodeId) {
         simulation.updateHighlighted(currentHighlightedNodeId);
@@ -93,15 +104,15 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
         simulation.updatePath(currentSelectedPathNodeIdSteps);
       }
       if (
-        previousGraphToView.nodes.some(
+        previousViewGraph.nodes.some(
           (node, i) =>
-            node.fx !== currentGraphToView.nodes[i].fx ||
-            node.fy !== currentGraphToView.nodes[i].fy
+            node.fx !== currentViewGraph.nodes[i].fx ||
+            node.fy !== currentViewGraph.nodes[i].fy
         ) ||
-        previousGraphToView.fadingNodes.some(
+        previousViewGraph.fadingNodes.some(
           (node, i) =>
-            node.fx !== currentGraphToView.nodes[i].fx ||
-            node.fy !== currentGraphToView.nodes[i].fy
+            node.fx !== currentViewGraph.nodes[i].fx ||
+            node.fy !== currentViewGraph.nodes[i].fy
         )
       ) {
         simulation.jigSimulation();

@@ -731,3 +731,6 @@ const selectNodesLinksIncludingPinGroupTransparency = createSelector(
 export const selectGraphToView = selectNodesLinksIncludingPinGroupTransparency;
 export type FullGraphSelectedToView = ReturnType<typeof selectGraphToView>;
 export type ReduxNodeSelectedToView = FullGraphSelectedToView["nodes"][0];
+export type ReduxFadingNodeSelectedToView =
+  FullGraphSelectedToView["fadingNodes"][0];
+export type NodeGroupSelectedToView = FullGraphSelectedToView["nodeGroups"][0];
