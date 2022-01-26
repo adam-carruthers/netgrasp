@@ -1,16 +1,9 @@
+import { SimulatedLink } from "../../d3App/common";
 import type { AppThunk } from "../reduxStore";
-import {
-  deleteLinkAndClearOngoingEdit,
-  ReduxNode,
-} from "../slices/fullGraphSlice";
-
-interface D3InternalLink {
-  source: ReduxNode;
-  target: ReduxNode;
-}
+import { deleteLinkAndClearOngoingEdit } from "../slices/fullGraphSlice";
 
 const handleLinkClickThunk =
-  (dataLink: D3InternalLink): AppThunk =>
+  (dataLink: SimulatedLink): AppThunk =>
   (dispatch, getState) => {
     const { ongoingEdit } = getState();
 

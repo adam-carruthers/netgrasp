@@ -3,7 +3,7 @@ import type {
   ReduxFadingNodeSelectedToView,
   ReduxNodeSelectedToView,
 } from "../redux/selectGraph/reselectView";
-import type { ReduxLink, ReduxNode } from "../redux/slices/fullGraphSlice";
+import type { ReduxLink } from "../redux/slices/fullGraphSlice";
 import {
   SimulatedFadingNode,
   SimulatedHighlightedNodeSelection,
