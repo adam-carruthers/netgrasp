@@ -389,7 +389,7 @@ class NodeSimulation {
         event.subject.fx = event.x;
         event.subject.fy = event.y;
       })
-      .on("end", (event, d) => {
+      .on("end", (event) => {
         if (!event.active) this.simulation.alphaTarget(0);
 
         event.subject.fx = null;
