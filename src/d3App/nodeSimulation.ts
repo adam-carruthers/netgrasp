@@ -234,12 +234,25 @@ class NodeSimulation {
       );
 
     this.simulation.nodes(allNewNodes);
+
     (
       this.simulation.force("link") as d3.ForceLink<
         SimulatedItem,
         SimulatedLink
       >
-    ).links(dataAllLinksToShow);
+    )
+      .links(dataAllLinksToShow)
+      .distance((link) =>
+        link.source.itemType === "nodeGroup" ||
+        link.target.itemType === "nodeGroup"
+          ? 300
+          : 150
+      );
+
+    (
+      this.simulation.force("charge") as d3.ForceManyBody<SimulatedItem>
+    ).strength((d) => (d.itemType === "nodeGroup" ? -3500 : -1800));
+
     this.simulation.alpha(1).restart();
 
     this.noNodesWarning.style(
