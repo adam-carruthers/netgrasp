@@ -7,6 +7,7 @@ export interface SubsetView {
   id: string;
   name: string;
   nodes: string[];
+  exclude: boolean;
 }
 
 const getSubsetViewById = (state: SubsetView[], subsetViewId: string) => {
@@ -33,6 +34,7 @@ const subsetViewsSlice = createSlice({
         id: nanoid(),
         name: "New Subset View",
         nodes: [],
+        exclude: false,
       });
     },
 
@@ -46,6 +48,19 @@ const subsetViewsSlice = createSlice({
       );
       if (foundSubsetView) {
         foundSubsetView.name = action.payload.newName;
+      }
+    },
+
+    editSubsetViewExclude: (
+      state,
+      action: PayloadAction<{ subsetViewId: string; newExclude: boolean }>
+    ) => {
+      const foundSubsetView = getSubsetViewById(
+        state,
+        action.payload.subsetViewId
+      );
+      if (foundSubsetView) {
+        foundSubsetView.exclude = action.payload.newExclude;
       }
     },
 
@@ -92,6 +107,7 @@ const subsetViewsSlice = createSlice({
 export const {
   addSubsetView,
   editSubsetViewName,
+  editSubsetViewExclude,
   deleteSubsetView,
   addNodeToSubsetView,
   removeNodeFromSubsetView,
