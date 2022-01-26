@@ -246,6 +246,29 @@ export const selectFullGraphLogicalCombinedNodes = createSelector(
 );
 
 //
+// Section that deals with logical excluding
+//
+
+export const selectNodesToExclude = createSelector(
+  selectSubsetViews,
+  (subsetViews) => {
+    const excludeSet = new Set<string>();
+    (subsetViews || [])
+      .filter((subsetView) => subsetView.exclude)
+      .forEach((subsetView) =>
+        subsetView.nodes.forEach((nodeId) => excludeSet.add(nodeId))
+      );
+    return excludeSet;
+  }
+);
+
+export const selectExcludeGraphNodes = createSelector(
+  selectFullGraphLogicalCombinedNodes,
+  selectNodesToExclude,
+  (nodes, exclusionSet) => nodes.filter((node) => !exclusionSet.has(node.id))
+);
+
+//
 // Node Groups
 //
 
@@ -307,7 +330,7 @@ const selectNodeGroupsById = createSelector(selectNodeGroups, (nodeGroups) =>
 );
 
 const selectCombineGraphNodesNodeGroups = createSelector(
-  selectFullGraphLogicalCombinedNodes,
+  selectExcludeGraphNodes,
   selectAllCombinesNodeIdMap,
   selectNodeGroupsById,
   (nodes, combinesMap, nodeGroupsById) => {
@@ -320,6 +343,8 @@ const selectCombineGraphNodesNodeGroups = createSelector(
       if (combineDestination === undefined) {
         outNodes.push(node);
       } else {
+        // If a node ends up in this section it must be being combined into a node group
+        // All logically combined node children would have been removed before this point
         outNodeGroupsSet.add(nodeGroupsById[combineDestination]);
       }
     });
@@ -348,15 +373,19 @@ export const selectCombinedGraphNodes = createSelector(
 export const selectCombinedGraphLinks = createSelector(
   selectFullGraphLinks,
   selectAllCombinesNodeIdMap,
-  (links, logicalMap): ReduxLink[] => {
-    if (!logicalMap) return links;
-
+  selectNodesToExclude,
+  (links, logicalMap, excludeNodes): ReduxLink[] => {
     return links
       .map(({ source, target }) => ({
         source: logicalMap[source] || source,
         target: logicalMap[target] || target,
       }))
-      .filter(({ source, target }) => source !== target);
+      .filter(
+        ({ source, target }) =>
+          source !== target &&
+          !excludeNodes.has(source) &&
+          !excludeNodes.has(target)
+      );
   }
 );
 

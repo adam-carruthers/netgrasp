@@ -7,7 +7,10 @@ import {
   editSubsetViewName,
   SubsetView,
 } from "../../redux/slices/subsetViewsSlice";
-import { setViewToSubsetView } from "../../redux/slices/viewSlice";
+import {
+  setViewToSubsetView,
+  setViewToFull,
+} from "../../redux/slices/viewSlice";
 import OngoingEditButton from "../shared/OngoingEditButton";
 
 const SubsetViewEdit: React.FC<{ subsetView: SubsetView }> = ({
@@ -35,13 +38,23 @@ const SubsetViewEdit: React.FC<{ subsetView: SubsetView }> = ({
           )
         }
       />
-      <button
-        type="button"
-        className="btn btn-primary flex-grow-1 mb-1 py-0"
-        onClick={() => dispatch(setViewToSubsetView(subsetView.id))}
-      >
-        {isBeingViewed ? "Currently viewing" : "View"}
-      </button>
+      {isBeingViewed ? (
+        <button
+          type="button"
+          className="btn btn-primary flex-grow-1 mb-1 py-0"
+          onClick={() => dispatch(setViewToFull())}
+        >
+          Return to full view
+        </button>
+      ) : (
+        <button
+          type="button"
+          className="btn btn-primary flex-grow-1 mb-1 py-0"
+          onClick={() => dispatch(setViewToSubsetView(subsetView.id))}
+        >
+          View
+        </button>
+      )}
       {subsetView.exclude ? (
         <button
           type="button"
@@ -74,34 +87,26 @@ const SubsetViewEdit: React.FC<{ subsetView: SubsetView }> = ({
           Exclude
         </button>
       )}
-      <div className="d-flex flex-grow-1">
-        <div className="w-50 pe-1 h-100">
-          <OngoingEditButton
-            isEditGoingSelector={({ ongoingEdit }) =>
-              !!(
-                ongoingEdit &&
-                ongoingEdit.editType === "editSubsetView" &&
-                ongoingEdit.subsetViewId === subsetView.id
-              )
-            }
-            className="btn btn-warning w-100 h-100 py-0"
-            notGoingMessage="Edit"
-            goingMessage="Stop Editing"
-            onStartEditClick={() =>
-              dispatch(startEditSubsetView(subsetView.id))
-            }
-          />
-        </div>
-        <div className="w-50 h-100">
-          <button
-            type="button"
-            className="btn btn-danger w-100 h-100 py-0"
-            onClick={() => dispatch(deleteSubsetView(subsetView.id))}
-          >
-            Delete
-          </button>
-        </div>
-      </div>
+      <OngoingEditButton
+        isEditGoingSelector={({ ongoingEdit }) =>
+          !!(
+            ongoingEdit &&
+            ongoingEdit.editType === "editSubsetView" &&
+            ongoingEdit.subsetViewId === subsetView.id
+          )
+        }
+        className="btn btn-warning w-100 h-100 py-0 mb-1"
+        notGoingMessage="Edit"
+        goingMessage="Stop Editing"
+        onStartEditClick={() => dispatch(startEditSubsetView(subsetView.id))}
+      />
+      <button
+        type="button"
+        className="btn btn-danger w-100 h-100 py-0"
+        onClick={() => dispatch(deleteSubsetView(subsetView.id))}
+      >
+        Delete
+      </button>
     </div>
   );
 };
