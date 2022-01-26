@@ -73,3 +73,10 @@ export type SimulatedPathLinkSelection = d3.Selection<
   any,
   any
 >;
+
+export type SimulatedNodeGroupSelection = d3.Selection<
+  SVGGElement,
+  SimulatedNodeGroup,
+  any,
+  any
+>;

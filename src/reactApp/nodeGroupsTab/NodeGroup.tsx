@@ -53,7 +53,7 @@ const NodeGroup: React.FC<{ nodeGroup: NodeGroup }> = ({ nodeGroup }) => {
             )
           }
         >
-          {nodeGroup.active ? "Disactivate" : "Activate"}
+          {nodeGroup.active ? "Deactivate" : "Activate"}
         </button>
         <DangerousButton
           beforeInitialClickMessage="Delete node group"

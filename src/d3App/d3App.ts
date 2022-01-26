@@ -30,7 +30,9 @@ const d3AppInit = () => {
 
   goToHighlightedNodeButton.on("click", boundCenterViewOnHighlightedNode);
 
-  return { boundCenterViewOnHighlightedNode };
+  const { getSimulatedNodeById } = simulation;
+
+  return { boundCenterViewOnHighlightedNode, getSimulatedNodeById };
 };
 
 export default d3AppInit;

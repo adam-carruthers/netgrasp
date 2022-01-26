@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import type {
+  NodeGroupSelectedToView,
   ReduxFadingNodeSelectedToView,
   ReduxNodeSelectedToView,
 } from "../redux/selectGraph/reselectView";
@@ -12,6 +13,7 @@ import {
   SimulatedLinkSelection,
   SimulatedNode,
   SimulatedNodeGroup,
+  SimulatedNodeGroupSelection,
   SimulatedNodeSelection,
   SimulatedPathLinkSelection,
   SimulatedPathNodeSelection,
@@ -52,10 +54,18 @@ import {
   createPathNotAllVisibleWarning,
 } from "./svgElements/svgWarnings";
 import { NodeGroup } from "../redux/slices/nodeGroupsSlice";
+import {
+  createNodeGroupSelector,
+  nodeGroupEnter,
+  nodeGroupTick,
+  nodeGroupUpdate,
+} from "./svgElements/svgNodeGroup";
 
 class NodeSimulation {
   svgNodes: SimulatedNodeSelection;
   svgLinks: SimulatedLinkSelection;
+
+  svgNodeGroups: SimulatedNodeGroupSelection;
 
   svgPathNodes: SimulatedPathNodeSelection;
   svgPathLinks: SimulatedPathLinkSelection;
@@ -80,6 +90,7 @@ class NodeSimulation {
     this.svgPathLinks = createPathLinkSelector(contentSvg);
     this.svgPathNodes = createPathNodeSelector(contentSvg);
     this.svgNodes = createNodeSelector(contentSvg);
+    this.svgNodeGroups = createNodeGroupSelector(contentSvg);
 
     this.goToHighlightedNodeButton = goToHighlightedNodeButton;
 
@@ -108,6 +119,7 @@ class NodeSimulation {
     linkTick(this.svgLinks);
     pathNodeTick(this.svgPathNodes);
     pathLinkTick(this.svgPathLinks);
+    nodeGroupTick(this.svgNodeGroups);
   };
 
   updateVisibleGraph = ({
@@ -212,7 +224,14 @@ class NodeSimulation {
       .join(
         (enter) => linkEnter(enter),
         (update) => linkUpdate(update)
-      ) as unknown as SimulatedLinkSelection;
+      );
+
+    this.svgNodeGroups = this.svgNodeGroups
+      .data(dataNodeGroupsToShowWithSimData, (d) => d.id)
+      .join(
+        (enter) => nodeGroupEnter(enter),
+        (update) => nodeGroupUpdate(update)
+      );
 
     this.simulation.nodes(allNewNodes);
     (
@@ -229,15 +248,19 @@ class NodeSimulation {
     );
   };
 
-  updateNodeInfo = (graphToView: { nodes: ReduxNodeSelectedToView[] }) => {
+  updateNodeInfo = (graphToView: {
+    nodes: ReduxNodeSelectedToView[];
+    nodeGroups: NodeGroupSelectedToView[];
+  }) => {
     const fullGraphNodesById = Object.fromEntries(
-      graphToView.nodes.map((d) => [d.id, d])
+      [...graphToView.nodes, ...graphToView.nodeGroups].map((d) => [d.id, d])
     );
     this.simulation.nodes().forEach((d) => {
       Object.assign(d, fullGraphNodesById[d.id]);
     });
 
     nodeUpdate(this.svgNodes);
+    nodeGroupUpdate(this.svgNodeGroups);
   };
 
   updateHighlighted = (highlighted: string | null) => {
@@ -320,6 +343,9 @@ class NodeSimulation {
   jigSimulation = () => {
     this.simulation.alpha(0.8).restart();
   };
+
+  getSimulatedNodeById = (nodeId: string) =>
+    this.simulation.nodes().find(({ id }) => id === nodeId);
 
   drag = () =>
     d3

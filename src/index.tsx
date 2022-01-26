@@ -13,17 +13,20 @@ import ErrorBoundary from "./reactApp/other/ErrorBoundary";
 
 import d3AppInit from "./d3App/d3App";
 import ReactApp from "./reactApp/reactApp";
-import CenterViewOnHighlightedNodeContext from "./reactApp/other/CenterViewOnHighlightedNodeContext";
+import D3FunctionsContext from "./reactApp/other/D3FunctionsContext";
 
 const persistor = persistStore(store);
 
-const { boundCenterViewOnHighlightedNode } = d3AppInit();
+const { boundCenterViewOnHighlightedNode, getSimulatedNodeById } = d3AppInit();
 
 ReactDOM.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <CenterViewOnHighlightedNodeContext.Provider
-        value={boundCenterViewOnHighlightedNode}
+      <D3FunctionsContext.Provider
+        value={{
+          centerViewOnHighlighted: boundCenterViewOnHighlightedNode,
+          getSimulatedNodeById,
+        }}
       >
         <Provider store={store}>
           <PersistGate loading={null} persistor={persistor}>
@@ -31,7 +34,7 @@ ReactDOM.render(
           </PersistGate>
         </Provider>
         <NotificationContainer />
-      </CenterViewOnHighlightedNodeContext.Provider>
+      </D3FunctionsContext.Provider>
     </ErrorBoundary>
   </React.StrictMode>,
   document.getElementById("app")

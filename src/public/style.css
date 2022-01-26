@@ -74,6 +74,7 @@
 
 .cursor-pointer,
 .node-g g,
+.node-group-g g,
 .link-g line {
   cursor: pointer;
 }

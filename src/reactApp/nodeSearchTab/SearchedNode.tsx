@@ -3,7 +3,9 @@ import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { selectHighlightedNodeId } from "../../redux/selectGraph/reselectView";
 import { ReduxNode } from "../../redux/slices/fullGraphSlice";
 import { highlightNode } from "../../redux/slices/highlightedSlice";
-import CenterViewOnHighlightedNodeContext from "../other/CenterViewOnHighlightedNodeContext";
+import D3FunctionsContext from "../other/D3FunctionsContext";
+import handleNodeClickThunk from "../../redux/thunks/handleNodeClickThunk";
+import { SimulatedNode } from "../../d3App/common";
 
 const SearchedNode: React.FC<{
   node: ReduxNode;
@@ -12,10 +14,11 @@ const SearchedNode: React.FC<{
   const nodeIsHighlightedNode = useAppSelector(
     (state) => selectHighlightedNodeId(state) === node.id
   );
-  const centerViewOnHighlighted = useContext(
-    CenterViewOnHighlightedNodeContext
-  );
+  const { centerViewOnHighlighted, getSimulatedNodeById } =
+    useContext(D3FunctionsContext);
   const dispatch = useAppDispatch();
+
+  const simNode = getSimulatedNodeById(node.id);
 
   return (
     <div
@@ -35,28 +38,40 @@ const SearchedNode: React.FC<{
         <>
           <button
             type="button"
-            className="btn btn-primary flex-grow-1 mb-1"
+            className="btn btn-warning flex-grow-1 mb-1"
             onClick={goToEditNodeTab}
           >
-            Go to edit nodes tab
+            Go to edit node tab
           </button>
           <button
             type="button"
-            className="btn btn-info flex-grow-1"
+            className="btn btn-info flex-grow-1 mb-1"
             onClick={centerViewOnHighlighted}
+            disabled={!simNode}
           >
-            Center view on node
+            {simNode ? "Center view on node" : "Node not in view"}
           </button>
         </>
       ) : (
         <button
           type="button"
-          className="btn btn-primary flex-grow-1"
+          className="btn btn-info flex-grow-1 mb-1"
           onClick={() => dispatch(highlightNode(node.id))}
         >
           Highlight
         </button>
       )}
+      <button
+        type="button"
+        className="btn btn-primary flex-grow-1"
+        onClick={() => {
+          if (simNode?.itemType === "node")
+            dispatch(handleNodeClickThunk(simNode as SimulatedNode));
+        }}
+        disabled={!simNode}
+      >
+        {simNode ? "Click the node" : "Node not in view"}
+      </button>
     </div>
   );
 };
