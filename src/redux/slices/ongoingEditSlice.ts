@@ -8,6 +8,7 @@ import {
   deleteNode,
   setNewParentOfExistingLogicalGroup,
 } from "./fullGraphSlice";
+import { deleteNodeGroup } from "./nodeGroupsSlice";
 import {
   addNodeToPath,
   deletePath,
@@ -39,7 +40,8 @@ type OngoingEdit =
       editType: "toggleNodesInLogicalGroup";
       parentNodeId: string;
     }
-  | { editType: "toggleNodesInPinGroup"; pinGroupId: string };
+  | { editType: "toggleNodesInPinGroup"; pinGroupId: string }
+  | { editType: "toggleNodesInNodeGroup"; nodeGroupId: string };
 
 const ongoingEditSlice = createSlice({
   name: "ongoingEdit",
@@ -89,6 +91,14 @@ const ongoingEditSlice = createSlice({
       pinGroupId: action.payload.pinGroupId,
     }),
 
+    startToggleNodesInNodeGroup: (
+      _,
+      action: PayloadAction<{ nodeGroupId: string }>
+    ) => ({
+      editType: "toggleNodesInNodeGroup",
+      nodeGroupId: action.payload.nodeGroupId,
+    }),
+
     haltOngoingEdit: () => null,
   },
   extraReducers: (builder) => {
@@ -116,7 +126,8 @@ const ongoingEditSlice = createSlice({
           : state
       )
       .addCase(clearLogicalGroup, () => null)
-      .addCase(deletePinGroup, () => null);
+      .addCase(deletePinGroup, () => null)
+      .addCase(deleteNodeGroup, () => null);
   },
 });
 
@@ -128,6 +139,7 @@ export const {
   startAddNodeToLogicalGroup,
   startToggleNodesInLogicalGroup,
   startToggleNodesInPinGroup,
+  startToggleNodesInNodeGroup,
   haltOngoingEdit,
 } = ongoingEditSlice.actions;
 

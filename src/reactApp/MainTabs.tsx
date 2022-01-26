@@ -8,6 +8,7 @@ import PathsTab from "./pathsTab/PathsTab";
 import EditPathTab from "./editPathTab/EditPathTab";
 import PinGroupsTab from "./pinGroupsTab/PinGroupsTab";
 import NodeSearchTab from "./nodeSearchTab/NodeSearchTab";
+import NodeGroupsTab from "./nodeGroupsTab/NodeGroupsTab";
 
 const MainTabs = () => {
   const [key, setKey] = useState<string>("view");
@@ -39,6 +40,9 @@ const MainTabs = () => {
       </Tab>
       <Tab title="Pin Groups" eventKey="pinGroups">
         <PinGroupsTab />
+      </Tab>
+      <Tab title="Node Groups" eventKey="nodeGroups">
+        <NodeGroupsTab />
       </Tab>
       <Tab title="Search Nodes" eventKey="search">
         <NodeSearchTab goToEditNodeTab={goToEditNodeTab} />
