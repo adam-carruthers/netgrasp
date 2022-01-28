@@ -11,6 +11,7 @@ const SearchedNode: React.FC<{
   node: ReduxNode;
   goToEditNodeTab: () => any;
 }> = ({ node, goToEditNodeTab }) => {
+  useAppSelector((state) => state); // Refresh on any redux update
   const nodeIsHighlightedNode = useAppSelector(
     (state) => selectHighlightedNodeId(state) === node.id
   );
@@ -29,7 +30,7 @@ const SearchedNode: React.FC<{
       style={{ width: 200 }}
     >
       <div
-        className="overflow-auto flex-grow-0"
+        className="overflow-auto flex-grow-0 flex-shrink-0"
         style={{ whiteSpace: "nowrap" }}
       >
         {node.name}

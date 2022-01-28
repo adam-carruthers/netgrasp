@@ -1,6 +1,11 @@
 import React, { useState } from "react";
-import { useAppSelector } from "../../redux/hooks";
-import { selectSearchedNodes } from "../../redux/selectGraph/reselectView";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import {
+  selectHighlightedNodeId,
+  selectSearchedNodes,
+} from "../../redux/selectGraph/reselectView";
+import { startCreateLinkWithSource } from "../../redux/slices/ongoingEditSlice";
+import OngoingEditButton from "../shared/OngoingEditButton";
 import SearchedNode from "./SearchedNode";
 
 const NodeSearchTab: React.FC<{ goToEditNodeTab: () => any }> = ({
@@ -11,6 +16,9 @@ const NodeSearchTab: React.FC<{ goToEditNodeTab: () => any }> = ({
     selectSearchedNodes(state, { searchString })
   );
 
+  const dispatch = useAppDispatch();
+  const highlightedNodeId = useAppSelector(selectHighlightedNodeId);
+
   return (
     <div className="inner-tab">
       <div className="me-4">
@@ -20,7 +28,19 @@ const NodeSearchTab: React.FC<{ goToEditNodeTab: () => any }> = ({
           type="text"
           value={searchString}
           onChange={(event) => setSearchString(event.target.value)}
-          className="form-control"
+          className="form-control mb-1"
+        />
+        <OngoingEditButton
+          notGoingMessage="Create link from highlighted"
+          goingMessage="Click to cancel"
+          isEditGoingSelector={({ ongoingEdit }) =>
+            ongoingEdit?.editType === "createLink"
+          }
+          onStartEditClick={() =>
+            highlightedNodeId &&
+            dispatch(startCreateLinkWithSource(highlightedNodeId))
+          }
+          className="btn btn-success w-100"
         />
       </div>
       {filteredNodes.map((node) => (

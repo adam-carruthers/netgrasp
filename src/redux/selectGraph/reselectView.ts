@@ -37,8 +37,12 @@ export const selectSearchedNodes = createSelector(
   (nodes, searchString) => {
     if (!searchString) return nodes;
 
+    const searchStringTerms = searchString.toLowerCase().trim().split(" ");
+
     return nodes.filter((node) =>
-      node.name.toLowerCase().includes(searchString.toLowerCase())
+      searchStringTerms.every((searchTerm) =>
+        node.name.toLowerCase().includes(searchTerm)
+      )
     );
   }
 );
