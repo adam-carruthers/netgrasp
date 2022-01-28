@@ -1,5 +1,7 @@
 import * as d3 from "d3";
 import { SimulatedNodeGroup, SimulatedNodeGroupSelection } from "../common";
+import store from "../../redux/reduxStore";
+import { changeNodeGroupActivation } from "../../redux/slices/nodeGroupsSlice";
 
 export const nodeGroupTick = (svgNodeGroups: SimulatedNodeGroupSelection) =>
   svgNodeGroups.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
@@ -26,6 +28,14 @@ export const nodeGroupEnter = (
 ) =>
   enter
     .append("g")
+    .on("dblclick", (_, clickedDataNodeGroup) => {
+      store.dispatch(
+        changeNodeGroupActivation({
+          nodeGroupId: clickedDataNodeGroup.id,
+          newActivation: false,
+        })
+      );
+    })
     .call((g) => drag(g))
     .call((g) =>
       g
