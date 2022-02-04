@@ -16,5 +16,5 @@ export const createBaseSvgs = () => {
 
   createDefs(baseSvg);
 
-  return [baseSvg, contentSvg, controlsSvg];
+  return { baseSvg, contentSvg, controlsSvg };
 };

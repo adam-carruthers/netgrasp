@@ -19,16 +19,19 @@ const focusViewGetSubgraph = (
     let directlyConnectedLinks;
     let betweenDirectlyConnectedLinks;
 
-    [directlyConnectedNodes, directlyConnectedLinks, remainingLinks] =
-      getNodesLinksDirectlyConnectedToNodeSet(
-        nodesAddedLastIteration,
-        remainingLinks
-      );
-
-    [betweenDirectlyConnectedLinks, remainingLinks] = getLinksWithinNodeSet(
+    ({
       directlyConnectedNodes,
+      directlyConnectedLinks,
+      remainingLinksAfter: remainingLinks,
+    } = getNodesLinksDirectlyConnectedToNodeSet(
+      nodesAddedLastIteration,
       remainingLinks
-    );
+    ));
+
+    ({
+      linksWithin: betweenDirectlyConnectedLinks,
+      remainingLinksAfter: remainingLinks,
+    } = getLinksWithinNodeSet(directlyConnectedNodes, remainingLinks));
 
     nodeIdsToView.push(...directlyConnectedNodes);
     linksToView.push(
@@ -39,11 +42,13 @@ const focusViewGetSubgraph = (
     nodesAddedLastIteration = directlyConnectedNodes;
   }
 
-  const [fadingNodeIdsSet, fadingLinks] =
-    getNodesLinksDirectlyConnectedToNodeSet(
-      nodesAddedLastIteration,
-      remainingLinks
-    );
+  const {
+    directlyConnectedNodes: fadingNodeIdsSet,
+    directlyConnectedLinks: fadingLinks,
+  } = getNodesLinksDirectlyConnectedToNodeSet(
+    nodesAddedLastIteration,
+    remainingLinks
+  );
 
   return {
     nodeIds: nodeIdsToView,

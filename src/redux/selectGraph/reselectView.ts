@@ -475,16 +475,16 @@ const selectBeingViewedPathNodeIdsLinks = createSelector(
     if (view.viewStyle !== "path") return null;
 
     const nodeIdSet = new Set(pathSteps);
-    const [links, remainingLinks] = getLinksWithinNodeSet(
-      nodeIdSet,
-      fullGraphLinks
-    );
-    const [fadingNodeIdsSet, fadingLinks] =
-      getNodesLinksDirectlyConnectedToNodeSet(nodeIdSet, remainingLinks);
+    const { linksWithin, remainingLinksAfter: remainingLinks } =
+      getLinksWithinNodeSet(nodeIdSet, fullGraphLinks);
+    const {
+      directlyConnectedNodes: fadingNodeIdsSet,
+      directlyConnectedLinks: fadingLinks,
+    } = getNodesLinksDirectlyConnectedToNodeSet(nodeIdSet, remainingLinks);
 
     return {
       nodeIds: Array.from(nodeIdSet),
-      links,
+      links: linksWithin,
       fadingNodeIds: Array.from(fadingNodeIdsSet),
       fadingLinks,
     };
@@ -497,16 +497,16 @@ const selectBeingViewedSubsetViewNodeIdsLinks = createSelector(
     if (!subsetViewNodeIds) return null;
 
     const nodeIdSet = new Set(subsetViewNodeIds);
-    const [links, remainingLinks] = getLinksWithinNodeSet(
-      nodeIdSet,
-      fullGraphLinks
-    );
-    const [fadingNodeIdsSet, fadingLinks] =
-      getNodesLinksDirectlyConnectedToNodeSet(nodeIdSet, remainingLinks);
+    const { linksWithin, remainingLinksAfter: remainingLinks } =
+      getLinksWithinNodeSet(nodeIdSet, fullGraphLinks);
+    const {
+      directlyConnectedNodes: fadingNodeIdsSet,
+      directlyConnectedLinks: fadingLinks,
+    } = getNodesLinksDirectlyConnectedToNodeSet(nodeIdSet, remainingLinks);
 
     return {
       nodeIds: subsetViewNodeIds,
-      links,
+      links: linksWithin,
       fadingNodeIds: Array.from(fadingNodeIdsSet),
       fadingLinks,
     };

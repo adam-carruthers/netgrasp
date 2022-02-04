@@ -9,8 +9,7 @@ import centerViewOnHighlightedNode from "./centerViewOnHighlightedNode";
 window.d3 = d3;
 
 const d3AppInit = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [baseSvg, contentSvg, controlsSvg] = createBaseSvgs();
+  const { baseSvg, contentSvg, controlsSvg } = createBaseSvgs();
 
   const goToHighlightedNodeButton =
     createGoToHighlightedNodeButton(controlsSvg);

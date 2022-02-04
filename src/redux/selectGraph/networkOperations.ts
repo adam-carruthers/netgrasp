@@ -3,7 +3,7 @@ import type { ReduxLink } from "../slices/fullGraphSlice";
 export const getNodesLinksDirectlyConnectedToNodeSet = (
   nodeIdSet: Set<string>,
   remainingLinks: ReduxLink[]
-): [Set<string>, ReduxLink[], ReduxLink[]] => {
+) => {
   const directlyConnectedNodes: Set<string> = new Set();
   const directlyConnectedLinks: ReduxLink[] = [];
   const remainingLinksAfter: ReduxLink[] = [];
@@ -24,7 +24,11 @@ export const getNodesLinksDirectlyConnectedToNodeSet = (
     directlyConnectedLinks.push(link);
   });
 
-  return [directlyConnectedNodes, directlyConnectedLinks, remainingLinksAfter];
+  return {
+    directlyConnectedNodes,
+    directlyConnectedLinks,
+    remainingLinksAfter,
+  };
 };
 
 export const getLinksWithinNodeSet = (
@@ -42,5 +46,5 @@ export const getLinksWithinNodeSet = (
     }
   });
 
-  return [linksWithin, remainingLinksAfter];
+  return { linksWithin, remainingLinksAfter };
 };
