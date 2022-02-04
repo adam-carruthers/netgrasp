@@ -80,6 +80,10 @@ class NodeSimulation {
 
   simulation: d3.Simulation<SimulatedItem, SimulatedLink>;
 
+  positionMemory: {
+    [itemId: string]: Required<d3.SimulationNodeDatum>;
+  } = {};
+
   constructor(
     contentSvg: d3.Selection<SVGSVGElement, any, any, any>,
     controlsSvg: d3.Selection<SVGSVGElement, any, any, any>,
@@ -143,9 +147,9 @@ class NodeSimulation {
     // The lines below retrieve that wanted simulation data, and write it into the incoming nodes
     // They also make deep copies of the incoming data so that it doesn't get modified elsewhere
     // cos d3 likes to mutate existing data >:(
-    const oldNodesById = Object.fromEntries(
-      this.simulation.nodes().map((d) => [d.id, d])
-    );
+    this.simulation.nodes().forEach(({ id, index, x, y, vx, vy, fx, fy }) => {
+      this.positionMemory[id] = { index, x, y, vx, vy, fx, fy };
+    });
 
     // The type is actually wrong.
     // It is not guaranteed that the nodes in the list will have simulation properties
@@ -153,7 +157,7 @@ class NodeSimulation {
     // But that will be true immediately after the first tick.
     const dataNodesToShowWithSimData: SimulatedNode[] = dataNodesToShow.map(
       (d) => ({
-        ...oldNodesById[d.id],
+        ...this.positionMemory[d.id],
         ...d,
         fading: false,
         itemType: "node",
@@ -161,21 +165,21 @@ class NodeSimulation {
     );
     const dataFadingNodesToShowWithSimData: SimulatedFadingNode[] =
       dataFadingNodesToShow.map((d) => ({
-        ...oldNodesById[d.id],
+        ...this.positionMemory[d.id],
         ...d,
         fading: true,
         itemType: "fadingNode",
       }));
     const dataNodeGroupsToShowWithSimData: SimulatedNodeGroup[] =
       dataNodeGroupsToShow.map((d) => ({
-        ...oldNodesById[d.id],
+        ...this.positionMemory[d.id],
         ...d,
         fading: false,
         itemType: "nodeGroup",
       }));
     const dataFadingNodeGroupsToShowWithSimData: SimulatedNodeGroup[] =
       dataFadingNodeGroupsToShow.map((d) => ({
-        ...oldNodesById[d.id],
+        ...this.positionMemory[d.id],
         ...d,
         fading: true,
         itemType: "nodeGroup",
