@@ -6,6 +6,7 @@ import {
   selectSelectedPathNodeIdStepsToView,
 } from "../redux/selectGraph/reselectView";
 import { ReduxLink } from "../redux/slices/fullGraphSlice";
+import { Textbox } from "../redux/slices/textboxesSlice";
 import type NodeSimulation from "./nodeSimulation";
 
 const isNodeRefreshNeeded = (
@@ -27,42 +28,20 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
   let currentViewGraph: FullGraphSelectedToView;
   let currentHighlightedNodeId: string | null;
   let currentSelectedPathNodeIdSteps: string[] | null;
+  let currentTextboxes: Textbox[] | null;
 
   function handleStoreEvent() {
     const previousViewGraph = currentViewGraph;
     const previousHighlightedNodeId = currentHighlightedNodeId;
     const previousSelectedPathNodeIdSteps = currentSelectedPathNodeIdSteps;
+    const previousTextboxes = currentTextboxes;
 
     const state = store.getState();
 
     currentViewGraph = selectGraphToView(state);
     currentHighlightedNodeId = selectHighlightedNodeId(state);
     currentSelectedPathNodeIdSteps = selectSelectedPathNodeIdStepsToView(state);
-
-    // if (previousGraphToView !== undefined) {
-    //   console.log(
-    //     previousGraphToView === undefined,
-    //     previousGraphToView.nodes.length !== currentGraphToView.nodes.length,
-    //     previousGraphToView.fadingNodes.length
-    //     !== currentGraphToView.fadingNodes.length,
-    //     previousGraphToView.links.length !== currentGraphToView.links.length,
-    //     previousGraphToView.fadingLinks.length !== currentGraphToView.fadingLinks.length,
-    //     previousGraphToView.nodes.some(
-    //       (node, i) => node.id !== currentGraphToView.nodes[i].id,
-    //     ),
-    //     previousGraphToView.nodes.some(
-    //       (node, i) => node.id !== currentGraphToView.nodes[i].id,
-    //     ),
-    //     previousGraphToView.links.some(
-    //       (link, i) => link.source !== currentGraphToView.links[i].source
-    //       || link.target !== currentGraphToView.links[i].target,
-    //     ),
-    //     previousGraphToView.fadingLinks.some(
-    //       (link, i) => (link.source !== currentGraphToView.fadingLinks[i].source)
-    //       || link.target !== currentGraphToView.fadingLinks[i].target,
-    //     ),
-    //   );
-    // }
+    currentTextboxes = state.textboxes;
 
     if (
       // Triggers that change the nodes or links present on the svg
@@ -117,6 +96,12 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
       ) {
         simulation.jigSimulation();
       }
+    }
+
+    if (previousTextboxes !== currentTextboxes) {
+      simulation.updateTextboxes(
+        currentTextboxes.filter((textbox) => textbox.visible)
+      );
     }
   }
 

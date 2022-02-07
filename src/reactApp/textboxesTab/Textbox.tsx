@@ -2,6 +2,7 @@ import React from "react";
 import { useAppDispatch } from "../../redux/hooks";
 import {
   changeTextboxText,
+  changeTextboxVisibility,
   deleteTextbox,
   Textbox,
 } from "../../redux/slices/textboxesSlice";
@@ -39,6 +40,14 @@ const Textbox: React.FC<{ textbox: Textbox }> = ({ textbox }) => {
             "btn py-0 w-100 btn-" + (textbox.visible ? "light" : "dark")
           }
           style={{ border: "1px solid black" }}
+          onClick={() =>
+            dispatch(
+              changeTextboxVisibility({
+                textboxId: textbox.id,
+                newVisibility: !textbox.visible,
+              })
+            )
+          }
         >
           {textbox.visible ? "Hide textbox" : "Show textbox"}
         </button>

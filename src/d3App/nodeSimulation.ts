@@ -60,6 +60,12 @@ import {
   nodeGroupTick,
   nodeGroupUpdate,
 } from "./svgElements/svgNodeGroup";
+import { Textbox } from "../redux/slices/textboxesSlice";
+import {
+  createTextboxSelector,
+  textboxEnter,
+  textboxUpdate,
+} from "./svgElements/svgTextbox";
 
 class NodeSimulation {
   svgNodes: SimulatedNodeSelection;
@@ -71,6 +77,8 @@ class NodeSimulation {
   svgPathLinks: SimulatedPathLinkSelection;
 
   svgHighlight: SimulatedHighlightedNodeSelection;
+
+  svgTextboxes: d3.Selection<SVGGElement, Textbox, any, any>;
 
   noNodesWarning: d3.Selection<SVGTextElement, any, any, any>;
   pathNotAllVisibleWarning: d3.Selection<SVGTextElement, any, any, any>;
@@ -95,6 +103,8 @@ class NodeSimulation {
     this.svgPathNodes = createPathNodeSelector(contentSvg);
     this.svgNodes = createNodeSelector(contentSvg);
     this.svgNodeGroups = createNodeGroupSelector(contentSvg);
+
+    this.svgTextboxes = createTextboxSelector(contentSvg);
 
     this.goToHighlightedNodeButton = goToHighlightedNodeButton;
 
@@ -355,6 +365,15 @@ class NodeSimulation {
       .join((enter) => pathLinkEnter(enter));
 
     this.ticked();
+  };
+
+  updateTextboxes = (textboxes: Textbox[]) => {
+    this.svgTextboxes = this.svgTextboxes
+      .data(textboxes, (d) => d.id)
+      .join(
+        (enter) => textboxEnter(enter),
+        (update) => textboxUpdate(update)
+      );
   };
 
   jigSimulation = () => {

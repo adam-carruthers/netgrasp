@@ -76,6 +76,7 @@
 .cursor-pointer,
 .node-g g,
 .node-group-g g,
+.textbox-g g,
 .link-g line {
   cursor: pointer;
 }
