@@ -12,4 +12,4 @@ To automatically generate a lot of your network from solarwinds, take the follow
 
 5. Run `python generate_full_graph.py` (run it from the same folder as the CSV file)
 
-6. It will create `fullNetworkGraph.json`, which you can open on the website like any other file
+6. It will create `fullNetworkGraph.json`, which you can open on the website by using the open file function
