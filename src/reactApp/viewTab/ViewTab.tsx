@@ -21,15 +21,14 @@ const ViewTab = () => {
 
   return (
     <div className="inner-tab">
-      <div className="me-2" style={{ width: 90 }}>
-        <button
-          type="button"
-          className="btn btn-primary h-100"
-          onClick={() => dispatch(setViewToFull())}
-        >
-          Set view full
-        </button>
-      </div>
+      <button
+        type="button"
+        className="btn btn-primary me-2"
+        style={{ width: 90 }}
+        onClick={() => dispatch(setViewToFull())}
+      >
+        Set view full
+      </button>
       <div className="me-3">
         <CurrentViewDisplay />
         <EditFadingLinks />
@@ -37,15 +36,14 @@ const ViewTab = () => {
         <EditFocusViewDistance />
       </div>
       <div className="border-end me-3" />
-      <div className="me-3" style={{ width: 100 }}>
-        <button
-          type="button"
-          className="btn btn-success h-100"
-          onClick={() => dispatch(addBlankSubsetView())}
-        >
-          Add new subset view
-        </button>
-      </div>
+      <button
+        type="button"
+        className="btn btn-success me-3"
+        style={{ width: 100 }}
+        onClick={() => dispatch(addBlankSubsetView())}
+      >
+        Add new subset view
+      </button>
       <div className="me-2" style={{ maxWidth: 200 }}>
         <b>Subset views:</b>
         <br />
