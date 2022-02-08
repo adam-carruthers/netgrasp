@@ -1,5 +1,7 @@
 import * as d3 from "d3";
 import createDefs from "./svgDefs";
+import store from "../../redux/reduxStore";
+import { clearHighlightedNode } from "../../redux/slices/highlightedSlice";
 
 export const createBaseSvgs = () => {
   // Create the selectors
@@ -8,7 +10,8 @@ export const createBaseSvgs = () => {
     .html("")
     .append("svg")
     .attr("xmlns", "http://www.w3.org/2000/svg")
-    .attr("preserveAspectRatio", "none");
+    .attr("preserveAspectRatio", "none")
+    .on("click", () => store.dispatch(clearHighlightedNode()));
 
   const contentSvg = baseSvg.append("svg").attr("x", 0).attr("y", 0);
 

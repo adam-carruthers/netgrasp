@@ -11,6 +11,7 @@ const highlightedSlice = createSlice({
     highlightNode: (_, action: PayloadAction<string>) => ({
       hNode: action.payload,
     }),
+    clearHighlightedNode: () => null,
   },
   extraReducers: (builder) => {
     builder.addCase(uploadGraph, () => null);
@@ -21,6 +22,6 @@ const highlightedSlice = createSlice({
   },
 });
 
-export const { highlightNode } = highlightedSlice.actions;
+export const { highlightNode, clearHighlightedNode } = highlightedSlice.actions;
 
 export default highlightedSlice.reducer;

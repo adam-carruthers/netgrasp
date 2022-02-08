@@ -8,7 +8,8 @@ import handleNodeDblClickThunk from "../../redux/thunks/handleNodeDblClickThunk"
 export const nodeTick = (svgNodes: SimulatedNodeSelection) =>
   svgNodes.attr("transform", (d) => `translate(${d.x}, ${d.y})`);
 
-const onNodeClick = (_: any, clickedDataNode: SimulatedNode) => {
+const onNodeClick = (event: any, clickedDataNode: SimulatedNode) => {
+  event.stopPropagation();
   store.dispatch(handleNodeClickThunk(clickedDataNode));
 };
 
@@ -67,7 +68,7 @@ export const nodeEnter = (
 ) =>
   enter
     .append("g")
-    .on("click", onNodeClick)
+    .on("click", onNodeClick, { capture: true })
     .on("dblclick", onNodeDblClick)
     .call((g) => {
       drag(g);
