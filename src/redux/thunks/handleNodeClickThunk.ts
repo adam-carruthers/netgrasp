@@ -24,7 +24,7 @@ import {
 } from "../slices/subsetViewsSlice";
 
 const handleNodeClickThunk =
-  (clickedDataNode: SimulatedNode, event: MouseEvent): AppThunk =>
+  (clickedDataNode: SimulatedNode, event?: MouseEvent): AppThunk =>
   (dispatch, getState) => {
     const {
       ongoingEdit,
@@ -32,7 +32,7 @@ const handleNodeClickThunk =
       pinGroups: { default: defaultPinGroup },
     } = getState();
 
-    if (event.ctrlKey) {
+    if (event && event.ctrlKey) {
       if (ongoingEdit) {
         NotificationManager.error(
           "You can't ctrl-click a node into the default pin group while an edit is ongoing.",
