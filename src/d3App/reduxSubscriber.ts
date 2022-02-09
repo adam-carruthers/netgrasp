@@ -78,6 +78,21 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
       } else {
         if (previousViewGraph !== currentViewGraph) {
           simulation.updateNodeInfo(currentViewGraph);
+          if (
+            simulation.simulation.alpha() < 0.1 &&
+            (previousViewGraph.nodes.some(
+              (node, i) =>
+                node.fx !== currentViewGraph.nodes[i].fx ||
+                node.fy !== currentViewGraph.nodes[i].fy
+            ) ||
+              previousViewGraph.fadingNodes.some(
+                (node, i) =>
+                  node.fx !== currentViewGraph.nodes[i].fx ||
+                  node.fy !== currentViewGraph.nodes[i].fy
+              ))
+          ) {
+            simulation.jigSimulation();
+          }
         }
         if (previousHighlightedNodeId !== currentHighlightedNodeId) {
           simulation.updateHighlighted(currentHighlightedNodeId);
@@ -87,20 +102,6 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
         ) {
           simulation.updatePath(currentSelectedPathNodeIdSteps);
         }
-        if (
-          previousViewGraph.nodes.some(
-            (node, i) =>
-              node.fx !== currentViewGraph.nodes[i].fx ||
-              node.fy !== currentViewGraph.nodes[i].fy
-          ) ||
-          previousViewGraph.fadingNodes.some(
-            (node, i) =>
-              node.fx !== currentViewGraph.nodes[i].fx ||
-              node.fy !== currentViewGraph.nodes[i].fy
-          )
-        ) {
-          simulation.jigSimulation();
-        }
       }
 
       if (previousTextboxes !== currentTextboxes) {
@@ -108,7 +109,7 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
           currentTextboxes.filter((textbox) => textbox.visible)
         );
       }
-    } catch {
+    } catch (e) {
       showEverythingHasBrokenError();
     }
   }

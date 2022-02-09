@@ -10,7 +10,7 @@ export const nodeTick = (svgNodes: SimulatedNodeSelection) =>
 
 const onNodeClick = (event: any, clickedDataNode: SimulatedNode) => {
   event.stopPropagation();
-  store.dispatch(handleNodeClickThunk(clickedDataNode));
+  store.dispatch(handleNodeClickThunk(clickedDataNode, event));
 };
 
 const onNodeDblClick = (_: any, clickedDataNode: SimulatedNode) => {
