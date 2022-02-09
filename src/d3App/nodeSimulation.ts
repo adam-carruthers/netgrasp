@@ -1,5 +1,6 @@
 import * as d3 from "d3";
 import type {
+  FadingNodeGroupSelectedToView,
   NodeGroupSelectedToView,
   ReduxFadingNodeSelectedToView,
   ReduxNodeSelectedToView,
@@ -7,6 +8,7 @@ import type {
 import type { ReduxLink } from "../redux/slices/fullGraphSlice";
 import {
   SimulatedFadingNode,
+  SimulatedFadingNodeGroup,
   SimulatedHighlightedNodeSelection,
   SimulatedItem,
   SimulatedLink,
@@ -53,7 +55,6 @@ import {
   createNoNodesWarning,
   createPathNotAllVisibleWarning,
 } from "./svgElements/svgWarnings";
-import { NodeGroup } from "../redux/slices/nodeGroupsSlice";
 import {
   createNodeGroupSelector,
   nodeGroupEnter,
@@ -146,10 +147,10 @@ class NodeSimulation {
   }: {
     nodes: ReduxNodeSelectedToView[];
     links: ReduxLink[];
-    nodeGroups: NodeGroup[];
+    nodeGroups: NodeGroupSelectedToView[];
     fadingNodes: ReduxFadingNodeSelectedToView[];
     fadingLinks: ReduxLink[];
-    fadingNodeGroups: NodeGroup[];
+    fadingNodeGroups: FadingNodeGroupSelectedToView[];
   }) => {
     // The this.simulation.nodes() data has:
     // - the old nodes dataNodes info, which we don't care about
@@ -187,7 +188,7 @@ class NodeSimulation {
         fading: false,
         itemType: "nodeGroup",
       }));
-    const dataFadingNodeGroupsToShowWithSimData: SimulatedNodeGroup[] =
+    const dataFadingNodeGroupsToShowWithSimData: SimulatedFadingNodeGroup[] =
       dataFadingNodeGroupsToShow.map((d) => ({
         ...this.positionMemory[d.id],
         ...d,
@@ -227,7 +228,7 @@ class NodeSimulation {
     this.svgNodes = this.svgNodes
       .data(dataNodesToShowWithSimData, (d) => d.id)
       .join(
-        (enter) => nodeEnter(enter, this.drag()),
+        (enter) => nodeEnter(enter, this.drag<SimulatedNode>()),
         (update) => nodeUpdate(update)
       );
 
@@ -243,7 +244,7 @@ class NodeSimulation {
     this.svgNodeGroups = this.svgNodeGroups
       .data(dataNodeGroupsToShowWithSimData, (d) => d.id)
       .join(
-        (enter) => nodeGroupEnter(enter, this.dragNodeGroup()),
+        (enter) => nodeGroupEnter(enter, this.drag<SimulatedNodeGroup>()),
         (update) => nodeGroupUpdate(update)
       );
 
@@ -383,9 +384,9 @@ class NodeSimulation {
   getSimulatedNodeById = (nodeId: string) =>
     this.simulation.nodes().find(({ id }) => id === nodeId);
 
-  drag = () =>
+  drag = <T extends SimulatedItem>() =>
     d3
-      .drag<SVGGElement, SimulatedNode>()
+      .drag<SVGGElement, T>()
       .on("start", (event) => {
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         event.subject.fx = event.subject.x;
@@ -411,25 +412,6 @@ class NodeSimulation {
           event.subject.fx = null;
           event.subject.fy = null;
         }
-      });
-
-  dragNodeGroup = () =>
-    d3
-      .drag<SVGGElement, SimulatedNodeGroup>()
-      .on("start", (event) => {
-        if (!event.active) this.simulation.alphaTarget(0.3).restart();
-        event.subject.fx = event.subject.x;
-        event.subject.fy = event.subject.y;
-      })
-      .on("drag", (event) => {
-        event.subject.fx = event.x;
-        event.subject.fy = event.y;
-      })
-      .on("end", (event) => {
-        if (!event.active) this.simulation.alphaTarget(0);
-
-        event.subject.fx = null;
-        event.subject.fy = null;
       });
 }
 

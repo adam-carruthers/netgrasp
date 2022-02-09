@@ -1,5 +1,6 @@
 import type * as d3 from "d3";
 import {
+  FadingNodeGroupSelectedToView,
   NodeGroupSelectedToView,
   ReduxFadingNodeSelectedToView,
   ReduxNodeSelectedToView,
@@ -9,6 +10,7 @@ export interface SimulatedItem extends Required<d3.SimulationNodeDatum> {
   id: string;
   fading: boolean;
   itemType: "node" | "fadingNode" | "nodeGroup";
+  pinSourceGroupId: string | null;
 }
 
 export interface SimulatedNode extends ReduxNodeSelectedToView, SimulatedItem {
@@ -23,6 +25,12 @@ export interface SimulatedFadingNode
 
 export interface SimulatedNodeGroup
   extends NodeGroupSelectedToView,
+    SimulatedItem {
+  itemType: "nodeGroup";
+}
+
+export interface SimulatedFadingNodeGroup
+  extends FadingNodeGroupSelectedToView,
     SimulatedItem {
   itemType: "nodeGroup";
 }

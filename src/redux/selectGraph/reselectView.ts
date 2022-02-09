@@ -651,11 +651,24 @@ const selectNodesLinksIncludingFullGraph = createSelector(
 // Any graph view comes through these transformations, including full graph
 //
 
-interface ReduxNodeWithExtraPinInfo extends ReduxNodeWithCombineLogicalInfo {
+interface ExtraNodeInfo {
   fx: number | null;
   fy: number | null;
   pinSourceGroupId: string | null;
 }
+interface ReduxNodeWithExtraPinInfo
+  extends ReduxNodeWithCombineLogicalInfo,
+    ExtraNodeInfo {}
+interface NodeGroupWithExtraPinInfo extends NodeGroup, ExtraNodeInfo {}
+
+const addPinInformation = <T extends { id: string }>(
+  itemList: T[],
+  pinMap: { [id: string]: ExtraNodeInfo }
+): (T & ExtraNodeInfo)[] =>
+  itemList.map((item) => ({
+    ...item,
+    ...(pinMap[item.id] || { fx: null, fy: null, pinSourceGroupId: null }),
+  }));
 
 const selectNodesLinksPinned = createSelector(
   selectNodesLinksIncludingFullGraph,
@@ -668,25 +681,26 @@ const selectNodesLinksPinned = createSelector(
     fadingNodes: ReduxNodeWithExtraPinInfo[];
     links: ReduxLink[];
     fadingLinks: ReduxLink[];
-    nodeGroups: NodeGroup[];
-    fadingNodeGroups: NodeGroup[];
+    nodeGroups: NodeGroupWithExtraPinInfo[];
+    fadingNodeGroups: NodeGroupWithExtraPinInfo[];
   } => ({
     ...viewGraph,
-    nodes: viewGraph.nodes.map((node) => ({
-      ...node,
-      ...(pinMap[node.id] || { fx: null, fy: null, pinSourceGroupId: null }),
-    })),
-    fadingNodes: viewGraph.fadingNodes.map((node) => ({
-      ...node,
-      ...(pinMap[node.id] || { fx: null, fy: null, pinSourceGroupId: null }),
-    })),
+    nodes: addPinInformation(viewGraph.nodes, pinMap),
+    fadingNodes: addPinInformation(viewGraph.fadingNodes, pinMap),
+    nodeGroups: addPinInformation(viewGraph.nodeGroups, pinMap),
+    fadingNodeGroups: addPinInformation(viewGraph.fadingNodeGroups, pinMap),
   })
 );
 
-interface ReduxNodeWithOngoingEditTransparency
-  extends ReduxNodeWithExtraPinInfo {
+interface OngoingEditTransparency {
   ongoingEditIsTransparent: boolean;
 }
+interface ReduxNodeWithOngoingEditTransparency
+  extends ReduxNodeWithExtraPinInfo,
+    OngoingEditTransparency {}
+interface NodeGroupWithOngoingEditTransparency
+  extends NodeGroupWithExtraPinInfo,
+    OngoingEditTransparency {}
 
 // => Add on transparency if a subsetView edit is ongoing
 const selectNodesLinksIncludingEditSubsetTransparency = createSelector(
@@ -700,8 +714,8 @@ const selectNodesLinksIncludingEditSubsetTransparency = createSelector(
     fadingNodes: ReduxNodeWithExtraPinInfo[];
     links: ReduxLink[];
     fadingLinks: ReduxLink[];
-    nodeGroups: NodeGroup[];
-    fadingNodeGroups: NodeGroup[];
+    nodeGroups: NodeGroupWithOngoingEditTransparency[];
+    fadingNodeGroups: NodeGroupWithExtraPinInfo[];
   } => ({
     ...nodesLinksForViewing,
     nodes: nodesLinksForViewing.nodes.map((node) => ({
@@ -711,6 +725,10 @@ const selectNodesLinksIncludingEditSubsetTransparency = createSelector(
             (nodeInSubsetViewId) => node.id !== nodeInSubsetViewId
           )
         : false,
+    })),
+    nodeGroups: nodesLinksForViewing.nodeGroups.map((nodeGroup) => ({
+      ...nodeGroup,
+      ongoingEditIsTransparent: false,
     })),
   })
 );
@@ -731,8 +749,8 @@ const selectNodesLinksIncludingLogicalGroupTransparency = createSelector(
     fadingNodes: ReduxNodeWithExtraPinInfo[];
     links: ReduxLink[];
     fadingLinks: ReduxLink[];
-    nodeGroups: NodeGroup[];
-    fadingNodeGroups: NodeGroup[];
+    nodeGroups: NodeGroupWithOngoingEditTransparency[];
+    fadingNodeGroups: NodeGroupWithExtraPinInfo[];
   } => {
     if (ongoingEdit?.editType !== "toggleNodesInLogicalGroup") {
       return {
@@ -775,6 +793,10 @@ const selectNodesLinksIncludingPinGroupTransparency = createSelector(
         ...node,
         ongoingEditIsTransparent: !(node.id in pins),
       })),
+      nodeGroups: nodesLinksForViewing.nodeGroups.map((nodeGroup) => ({
+        ...nodeGroup,
+        ongoingEditIsTransparent: !(nodeGroup.id in pins),
+      })),
     };
   }
 );
@@ -802,3 +824,5 @@ export type ReduxNodeSelectedToView = FullGraphSelectedToView["nodes"][0];
 export type ReduxFadingNodeSelectedToView =
   FullGraphSelectedToView["fadingNodes"][0];
 export type NodeGroupSelectedToView = FullGraphSelectedToView["nodeGroups"][0];
+export type FadingNodeGroupSelectedToView =
+  FullGraphSelectedToView["fadingNodeGroups"][0];
