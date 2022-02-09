@@ -10,12 +10,21 @@ import {
   selectSelectedPathNodeIdStepsLimited,
 } from "../reselectView";
 
-const standardOutputtedFadingNodeProperties = {
-  hasCombinedChildren: false,
-  logicalChildren: [],
+const standardPinSourceProperties = {
   fx: null,
   fy: null,
   pinSourceGroupId: null,
+};
+
+const standardOutputtedFadingNodeProperties = {
+  hasCombinedChildren: false,
+  logicalChildren: [],
+  ...standardPinSourceProperties,
+};
+
+const standardOutputtedNodeGroupProperties = {
+  ...standardPinSourceProperties,
+  ongoingEditIsTransparent: false,
 };
 
 const standardOutputtedNodeProperties = {
@@ -1043,6 +1052,7 @@ describe("node groups", () => {
           id: "ng-1",
           active: "true",
           members: ["aNode", "dNode"],
+          ...standardOutputtedNodeGroupProperties,
         },
       ],
       fadingNodeGroups: [],
@@ -1122,6 +1132,7 @@ describe("node groups", () => {
           id: "ng-1",
           active: "true",
           members: ["dNode", "eNode"],
+          ...standardOutputtedNodeGroupProperties,
         },
       ],
       fadingNodeGroups: [
@@ -1129,6 +1140,7 @@ describe("node groups", () => {
           id: "ng-2",
           active: "true",
           members: ["fNode", "gNode"],
+          ...standardPinSourceProperties,
         },
       ],
     });
@@ -1235,7 +1247,14 @@ describe("node groups", () => {
         { source: "dNode", target: "gNode" },
         { source: "eNode", target: "aNode" },
       ],
-      nodeGroups: [{ id: "ng1", active: true, members: ["-aNode", "bNode"] }],
+      nodeGroups: [
+        {
+          id: "ng1",
+          active: true,
+          members: ["-aNode", "bNode"],
+          ...standardOutputtedNodeGroupProperties,
+        },
+      ],
       fadingNodeGroups: [],
     });
   });
