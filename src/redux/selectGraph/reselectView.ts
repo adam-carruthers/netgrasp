@@ -51,14 +51,22 @@ const selectBeingEditedPinGroup = createSelector(
   selectPinGroups,
   selectOngoingEdit,
   (pinGroups, ongoingEdit) =>
-    ongoingEdit?.editType === "toggleNodesInPinGroup"
-      ? pinGroups.find((pinGroup) => pinGroup.id === ongoingEdit.pinGroupId) ||
-        null
-      : null
+    ongoingEdit?.editType !== "toggleNodesInPinGroup"
+      ? null
+      : pinGroups.default.id === ongoingEdit.pinGroupId
+      ? pinGroups.default
+      : pinGroups.other.find(
+          (pinGroup) => pinGroup.id === ongoingEdit.pinGroupId
+        ) || null
 );
 
+const selectPinGroupsArray = createSelector(selectPinGroups, (pinGroups) => [
+  pinGroups.default,
+  ...pinGroups.other,
+]);
+
 export const selectPinGroupsInOngoingEditOrder = createSelector(
-  selectPinGroups,
+  selectPinGroupsArray,
   selectBeingEditedPinGroup,
   (pinGroups, beingEditedPinGroup) => {
     if (!beingEditedPinGroup) return pinGroups;

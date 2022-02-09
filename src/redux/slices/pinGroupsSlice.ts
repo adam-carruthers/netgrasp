@@ -18,25 +18,38 @@ export interface PinGroup {
   };
 }
 
-const getPinGroupById = (state: PinGroup[], pinGroupId: string) => {
-  const pinGroup = state.find((pinGroup) => pinGroup.id === pinGroupId);
+export interface PinGroupReducer {
+  default: PinGroup;
+  other: PinGroup[];
+}
+
+const getPinGroupById = (state: PinGroupReducer, pinGroupId: string) => {
+  if (state.default.id === pinGroupId) return state.default;
+  const pinGroup = state.other.find((pinGroup) => pinGroup.id === pinGroupId);
   if (!pinGroup) {
     console.error("Couldn't find pin group", pinGroupId);
   }
   return pinGroup;
 };
 
+const createBlankPinGroup = (): PinGroup => ({
+  id: nanoid(),
+  name: "New Pin Group",
+  active: false,
+  pins: {},
+});
+
+const createInitialState = (): PinGroupReducer => ({
+  default: createBlankPinGroup(),
+  other: [],
+});
+
 const pinGroupsSlice = createSlice({
   name: "pinGroups",
-  initialState: [] as PinGroup[],
+  initialState: createInitialState() as PinGroupReducer,
   reducers: {
     addBlankPinGroup: (state) => {
-      state.push({
-        id: nanoid(),
-        name: "New Pin Group",
-        active: false,
-        pins: {},
-      });
+      state.other.push(createBlankPinGroup());
     },
 
     changePinGroupName: (
@@ -89,8 +102,11 @@ const pinGroupsSlice = createSlice({
       }
     },
 
-    deletePinGroup: (state, action: PayloadAction<string>) =>
-      state.filter((pinGroup) => pinGroup.id !== action.payload),
+    deletePinGroup: (state, action: PayloadAction<string>) => {
+      state.other = state.other.filter(
+        (pinGroup) => pinGroup.id !== action.payload
+      );
+    },
 
     changePinGroupPosition: (
       state,
@@ -99,26 +115,62 @@ const pinGroupsSlice = createSlice({
         positionIndexChange: 1 | -1;
       }>
     ) => {
-      const pinGroupIndex = state.findIndex(
+      const pinGroupIndex = state.other.findIndex(
         (pinGroup) => pinGroup.id === action.payload.pinGroupId
       );
 
       if (pinGroupIndex !== -1) {
-        const pinGroup = state[pinGroupIndex];
-        state.splice(pinGroupIndex, 1);
-        state.splice(
+        const pinGroup = state.other[pinGroupIndex];
+        state.other.splice(pinGroupIndex, 1);
+        state.other.splice(
           Math.max(pinGroupIndex + action.payload.positionIndexChange, 0),
           0,
           pinGroup
         );
       }
     },
+
+    makePinGroupDefault: (
+      state,
+      action: PayloadAction<{ pinGroupId: string }>
+    ) => {
+      const newDefaultPinGroup = state.other.find(
+        (pinGroup) => pinGroup.id === action.payload.pinGroupId
+      );
+
+      if (newDefaultPinGroup) {
+        state.other = [
+          state.default,
+          ...state.other.filter(
+            (pinGroup) => pinGroup.id !== action.payload.pinGroupId
+          ),
+        ];
+        state.default = newDefaultPinGroup;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(uploadGraph, (_, action) => action.payload.pinGroups || [])
+      .addCase(uploadGraph, (_, action) => {
+        if (!action.payload.pinGroups) {
+          return createInitialState();
+        }
+        if (Array.isArray(action.payload.pinGroups)) {
+          return {
+            default: {
+              id: nanoid(),
+              name: "Default Pin Group",
+              active: true,
+              pins: {},
+            },
+            other: action.payload.pinGroups,
+          };
+        }
+        return action.payload.pinGroups;
+      })
       .addCase(deleteNode, (state, action) => {
-        state.forEach((pinGroup) => {
+        delete state.default.pins[action.payload];
+        state.other.forEach((pinGroup) => {
           delete pinGroup.pins[action.payload];
         });
       })
@@ -140,6 +192,7 @@ export const {
   removeNodeFromPinGroup,
   deletePinGroup,
   changePinGroupPosition,
+  makePinGroupDefault,
 } = pinGroupsSlice.actions;
 
 export default pinGroupsSlice.reducer;

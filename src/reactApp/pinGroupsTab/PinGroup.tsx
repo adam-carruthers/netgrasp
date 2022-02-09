@@ -6,6 +6,7 @@ import {
   changePinGroupName,
   changePinGroupPosition,
   deletePinGroup,
+  makePinGroupDefault,
   PinGroup as PinGroupType,
 } from "../../redux/slices/pinGroupsSlice";
 import DangerousButton from "../shared/DangerousButton";
@@ -21,19 +22,33 @@ const PinGroup: React.FC<{ pinGroup: PinGroupType }> = ({ pinGroup }) => {
   const pinGroupEditIsOngoing = useAppSelector(
     ({ ongoingEdit }) => ongoingEdit?.editType === "toggleNodesInPinGroup"
   );
+  const thisPinGroupIsTheDefault = useAppSelector(
+    ({ pinGroups }) => pinGroups.default.id === pinGroup.id
+  );
 
   return (
     <>
-      {thisPinGroupIsBeingEdited && (
+      {(thisPinGroupIsBeingEdited || thisPinGroupIsTheDefault) && (
         <div className="me-2">
-          <b>Being edited:</b>
+          {thisPinGroupIsBeingEdited && (
+            <div>
+              <b>Being edited:</b>
+            </div>
+          )}
+          {thisPinGroupIsTheDefault && (
+            <div>
+              <b>Default:</b>
+            </div>
+          )}
         </div>
       )}
       <div
         className={
           "bg-light-grey py-1 px-1" +
           (pinGroup.active ? " selected-tab-item" : "") +
-          (thisPinGroupIsBeingEdited ? " me-5" : " me-2")
+          (thisPinGroupIsBeingEdited || thisPinGroupIsTheDefault
+            ? " me-5"
+            : " me-2")
         }
         style={{ width: 250 }}
       >
@@ -69,11 +84,6 @@ const PinGroup: React.FC<{ pinGroup: PinGroupType }> = ({ pinGroup }) => {
             ? "Deactivate"
             : "Activate"}
         </button>
-        <DangerousButton
-          beforeInitialClickMessage="Delete pin group"
-          onSecondClick={() => dispatch(deletePinGroup(pinGroup.id))}
-          className="btn btn-danger w-100 py-0 mb-1"
-        />
         <OngoingEditButton
           isEditGoingSelector={() => thisPinGroupIsBeingEdited}
           notGoingMessage="Toggle nodes in group"
@@ -83,38 +93,58 @@ const PinGroup: React.FC<{ pinGroup: PinGroupType }> = ({ pinGroup }) => {
             dispatch(startToggleNodesInPinGroup({ pinGroupId: pinGroup.id }))
           }
         />
-        <div className="d-flex">
-          <button
-            type="button"
-            className="btn btn-info flex-grow-1 py-0 me-1"
-            disabled={pinGroupEditIsOngoing}
-            onClick={() =>
-              dispatch(
-                changePinGroupPosition({
-                  pinGroupId: pinGroup.id,
-                  positionIndexChange: -1,
-                })
-              )
-            }
-          >
-            &lt;&lt;
-          </button>
-          <button
-            type="button"
-            className="btn btn-info flex-grow-1 py-0"
-            disabled={pinGroupEditIsOngoing}
-            onClick={() =>
-              dispatch(
-                changePinGroupPosition({
-                  pinGroupId: pinGroup.id,
-                  positionIndexChange: 1,
-                })
-              )
-            }
-          >
-            &gt;&gt;
-          </button>
-        </div>
+        {thisPinGroupIsTheDefault ? (
+          <i>Ctrl-Click to pin nodes in the default group.</i>
+        ) : (
+          <>
+            <button
+              type="button"
+              className="btn btn-success w-100 py-0 mb-1"
+              onClick={() =>
+                dispatch(makePinGroupDefault({ pinGroupId: pinGroup.id }))
+              }
+            >
+              Make default
+            </button>
+            <DangerousButton
+              beforeInitialClickMessage="Delete pin group"
+              onSecondClick={() => dispatch(deletePinGroup(pinGroup.id))}
+              className="btn btn-danger w-100 py-0 mb-1"
+            />
+            <div className="d-flex">
+              <button
+                type="button"
+                className="btn btn-info flex-grow-1 py-0 me-1"
+                disabled={pinGroupEditIsOngoing}
+                onClick={() =>
+                  dispatch(
+                    changePinGroupPosition({
+                      pinGroupId: pinGroup.id,
+                      positionIndexChange: -1,
+                    })
+                  )
+                }
+              >
+                &lt;&lt;
+              </button>
+              <button
+                type="button"
+                className="btn btn-info flex-grow-1 py-0"
+                disabled={pinGroupEditIsOngoing}
+                onClick={() =>
+                  dispatch(
+                    changePinGroupPosition({
+                      pinGroupId: pinGroup.id,
+                      positionIndexChange: 1,
+                    })
+                  )
+                }
+              >
+                &gt;&gt;
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

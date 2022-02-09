@@ -2,7 +2,7 @@ import { createAction } from "@reduxjs/toolkit";
 import type { ReduxLink, ReduxNode } from "./fullGraphSlice";
 import { NodeGroup } from "./nodeGroupsSlice";
 import type { Path } from "./pathsSlice";
-import { PinGroup } from "./pinGroupsSlice";
+import type { PinGroup, PinGroupReducer } from "./pinGroupsSlice";
 import type { SubsetView } from "./subsetViewsSlice";
 
 export const uploadGraph = createAction<{
@@ -10,6 +10,6 @@ export const uploadGraph = createAction<{
   links: ReduxLink[];
   paths?: Path[];
   subsetViews?: SubsetView[];
-  pinGroups?: PinGroup[];
+  pinGroups?: PinGroupReducer | PinGroup[];
   nodeGroups?: NodeGroup[];
 }>("uploadGraph");

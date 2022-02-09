@@ -7,6 +7,7 @@ import {
 } from "../redux/selectGraph/reselectView";
 import { ReduxLink } from "../redux/slices/fullGraphSlice";
 import { Textbox } from "../redux/slices/textboxesSlice";
+import showEverythingHasBrokenError from "../showEverythingHasBrokenError";
 import type NodeSimulation from "./nodeSimulation";
 
 const isNodeRefreshNeeded = (
@@ -31,77 +32,84 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
   let currentTextboxes: Textbox[] | null;
 
   function handleStoreEvent() {
-    const previousViewGraph = currentViewGraph;
-    const previousHighlightedNodeId = currentHighlightedNodeId;
-    const previousSelectedPathNodeIdSteps = currentSelectedPathNodeIdSteps;
-    const previousTextboxes = currentTextboxes;
+    try {
+      const previousViewGraph = currentViewGraph;
+      const previousHighlightedNodeId = currentHighlightedNodeId;
+      const previousSelectedPathNodeIdSteps = currentSelectedPathNodeIdSteps;
+      const previousTextboxes = currentTextboxes;
 
-    const state = store.getState();
+      const state = store.getState();
 
-    currentViewGraph = selectGraphToView(state);
-    currentHighlightedNodeId = selectHighlightedNodeId(state);
-    currentSelectedPathNodeIdSteps = selectSelectedPathNodeIdStepsToView(state);
-    currentTextboxes = state.textboxes;
+      currentViewGraph = selectGraphToView(state);
+      currentHighlightedNodeId = selectHighlightedNodeId(state);
+      currentSelectedPathNodeIdSteps =
+        selectSelectedPathNodeIdStepsToView(state);
+      currentTextboxes = state.textboxes;
 
-    if (
-      // Triggers that change the nodes or links present on the svg
-      // This will need to cause a full rerender and a change of the simulation, etc
-      previousViewGraph === undefined ||
-      isNodeRefreshNeeded(previousViewGraph.nodes, currentViewGraph.nodes) ||
-      isNodeRefreshNeeded(
-        previousViewGraph.fadingNodes,
-        currentViewGraph.fadingNodes
-      ) ||
-      isNodeRefreshNeeded(
-        previousViewGraph.nodeGroups,
-        currentViewGraph.nodeGroups
-      ) ||
-      isNodeRefreshNeeded(
-        previousViewGraph.fadingNodeGroups,
-        currentViewGraph.fadingNodeGroups
-      ) ||
-      isLinkRefreshNeeded(previousViewGraph.links, currentViewGraph.links) ||
-      isLinkRefreshNeeded(
-        previousViewGraph.fadingLinks,
-        currentViewGraph.fadingLinks
-      )
-    ) {
-      simulation.updateVisibleGraph(currentViewGraph);
-      // If the visible graph is updated
-      // Highlighted and path need to be changed as well
-      // To bind their SVG elements to the new simulation
-      simulation.updateHighlighted(currentHighlightedNodeId);
-      simulation.updatePath(currentSelectedPathNodeIdSteps);
-    } else {
-      if (previousViewGraph !== currentViewGraph) {
-        simulation.updateNodeInfo(currentViewGraph);
-      }
-      if (previousHighlightedNodeId !== currentHighlightedNodeId) {
-        simulation.updateHighlighted(currentHighlightedNodeId);
-      }
-      if (previousSelectedPathNodeIdSteps !== currentSelectedPathNodeIdSteps) {
-        simulation.updatePath(currentSelectedPathNodeIdSteps);
-      }
       if (
-        previousViewGraph.nodes.some(
-          (node, i) =>
-            node.fx !== currentViewGraph.nodes[i].fx ||
-            node.fy !== currentViewGraph.nodes[i].fy
+        // Triggers that change the nodes or links present on the svg
+        // This will need to cause a full rerender and a change of the simulation, etc
+        previousViewGraph === undefined ||
+        isNodeRefreshNeeded(previousViewGraph.nodes, currentViewGraph.nodes) ||
+        isNodeRefreshNeeded(
+          previousViewGraph.fadingNodes,
+          currentViewGraph.fadingNodes
         ) ||
-        previousViewGraph.fadingNodes.some(
-          (node, i) =>
-            node.fx !== currentViewGraph.nodes[i].fx ||
-            node.fy !== currentViewGraph.nodes[i].fy
+        isNodeRefreshNeeded(
+          previousViewGraph.nodeGroups,
+          currentViewGraph.nodeGroups
+        ) ||
+        isNodeRefreshNeeded(
+          previousViewGraph.fadingNodeGroups,
+          currentViewGraph.fadingNodeGroups
+        ) ||
+        isLinkRefreshNeeded(previousViewGraph.links, currentViewGraph.links) ||
+        isLinkRefreshNeeded(
+          previousViewGraph.fadingLinks,
+          currentViewGraph.fadingLinks
         )
       ) {
-        simulation.jigSimulation();
+        simulation.updateVisibleGraph(currentViewGraph);
+        // If the visible graph is updated
+        // Highlighted and path need to be changed as well
+        // To bind their SVG elements to the new simulation
+        simulation.updateHighlighted(currentHighlightedNodeId);
+        simulation.updatePath(currentSelectedPathNodeIdSteps);
+      } else {
+        if (previousViewGraph !== currentViewGraph) {
+          simulation.updateNodeInfo(currentViewGraph);
+        }
+        if (previousHighlightedNodeId !== currentHighlightedNodeId) {
+          simulation.updateHighlighted(currentHighlightedNodeId);
+        }
+        if (
+          previousSelectedPathNodeIdSteps !== currentSelectedPathNodeIdSteps
+        ) {
+          simulation.updatePath(currentSelectedPathNodeIdSteps);
+        }
+        if (
+          previousViewGraph.nodes.some(
+            (node, i) =>
+              node.fx !== currentViewGraph.nodes[i].fx ||
+              node.fy !== currentViewGraph.nodes[i].fy
+          ) ||
+          previousViewGraph.fadingNodes.some(
+            (node, i) =>
+              node.fx !== currentViewGraph.nodes[i].fx ||
+              node.fy !== currentViewGraph.nodes[i].fy
+          )
+        ) {
+          simulation.jigSimulation();
+        }
       }
-    }
 
-    if (previousTextboxes !== currentTextboxes) {
-      simulation.updateTextboxes(
-        currentTextboxes.filter((textbox) => textbox.visible)
-      );
+      if (previousTextboxes !== currentTextboxes) {
+        simulation.updateTextboxes(
+          currentTextboxes.filter((textbox) => textbox.visible)
+        );
+      }
+    } catch {
+      showEverythingHasBrokenError();
     }
   }
 

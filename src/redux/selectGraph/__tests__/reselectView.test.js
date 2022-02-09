@@ -24,6 +24,19 @@ const standardOutputtedNodeProperties = {
   alreadyInLogicalGroupWarning: false,
 };
 
+const standardState = {
+  pinGroups: {
+    default: {
+      id: "abcd",
+      name: "standard",
+      active: false,
+      pins: {},
+    },
+    other: [],
+  },
+  ongoingEdit: null,
+};
+
 const emptyNodeGroups = {
   nodeGroups: [],
   fadingNodeGroups: [],
@@ -151,12 +164,12 @@ describe("selectGraphToView", () => {
   test("should give back the full graph when the view style is full", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: { viewStyle: "full", fadingLinks: true, combineLogical: false },
         fullGraph: {
           nodes: [{ id: "aNode" }, { id: "bNode" }, { id: "cNode" }],
           links: [{ source: "aNode", target: "bNode" }],
         },
-        ongoingEdit: null,
       })
     ).toEqual({
       nodes: [
@@ -174,6 +187,7 @@ describe("selectGraphToView", () => {
   test("should give back just the neighbors on focus view no fading links", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "focus",
           fadingLinks: false,
@@ -196,7 +210,6 @@ describe("selectGraphToView", () => {
             { source: "dNode", target: "eNode" },
           ],
         },
-        ongoingEdit: null,
       })
     ).toEqual({
       nodes: [
@@ -224,6 +237,7 @@ describe("selectGraphToView", () => {
 
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "focus",
           fadingLinks: false,
@@ -246,7 +260,6 @@ describe("selectGraphToView", () => {
             { source: "dNode", target: "eNode" },
           ],
         },
-        ongoingEdit: null,
       })
     ).toEqual({
       nodes: [
@@ -265,6 +278,7 @@ describe("selectGraphToView", () => {
   test("should give back two steps of neighbors on focus view with fading links", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "focus",
           fadingLinks: true,
@@ -326,6 +340,7 @@ describe("selectGraphToView", () => {
   test("should correctly apply the subset transparency", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: { viewStyle: "full", fadingLinks: true, combineLogical: false },
         fullGraph: {
           nodes: [{ id: "aNode" }, { id: "bNode" }, { id: "cNode" }],
@@ -366,6 +381,7 @@ describe("selectGraphToView", () => {
 
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "focus",
           fadingLinks: false,
@@ -415,6 +431,7 @@ describe("selectGraphToView", () => {
   test("can show only the nodes in a path", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: { viewStyle: "path", fadingLinks: false, combineLogical: false },
         fullGraph: {
           nodes: [
@@ -479,6 +496,7 @@ describe("selectGraphToView", () => {
   test("can show only the nodes in a subset view", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "subset",
           fadingLinks: false,
@@ -501,7 +519,6 @@ describe("selectGraphToView", () => {
             { source: "dNode", target: "eNode" },
           ],
         },
-        ongoingEdit: null,
         selectedPath: null,
         paths: [],
         subsetViews: [
@@ -539,27 +556,39 @@ describe("selectGraphToView", () => {
             { id: "bNode" },
             { id: "cNode" },
             { id: "dNode" },
+            { id: "eNode" },
           ],
           links: [{ source: "aNode", target: "bNode" }],
         },
         ongoingEdit: null,
-        pinGroups: [
-          {
-            id: "pinnn",
+        pinGroups: {
+          default: {
+            id: "default",
             active: true,
-            pins: { aNode: { fx: 5, fy: 6 }, bNode: { fx: 7, fy: 8 } },
+            pins: { eNode: { fx: -1, fy: -2 } },
           },
-          {
-            id: "pinnnIgnoreMe",
-            active: false,
-            pins: { dNode: { fx: 99, fy: 100 } },
-          },
-          {
-            id: "pinnnLowerPriority",
-            active: true,
-            pins: { bNode: { fx: 9, fy: 10 }, cNode: { fx: 11, fy: 12 } },
-          },
-        ],
+          other: [
+            {
+              id: "pinnn",
+              active: true,
+              pins: {
+                aNode: { fx: 5, fy: 6 },
+                bNode: { fx: 7, fy: 8 },
+                eNode: { fx: -100, fy: -200 },
+              },
+            },
+            {
+              id: "pinnnIgnoreMe",
+              active: false,
+              pins: { dNode: { fx: 99, fy: 100 } },
+            },
+            {
+              id: "pinnnLowerPriority",
+              active: true,
+              pins: { bNode: { fx: 9, fy: 10 }, cNode: { fx: 11, fy: 12 } },
+            },
+          ],
+        },
       })
     ).toEqual({
       nodes: [
@@ -585,6 +614,13 @@ describe("selectGraphToView", () => {
           pinSourceGroupId: "pinnnLowerPriority",
         },
         { id: "dNode", ...standardOutputtedNodeProperties },
+        {
+          id: "eNode",
+          ...standardOutputtedNodeProperties,
+          fx: -1,
+          fy: -2,
+          pinSourceGroupId: "default",
+        },
       ],
       links: [{ source: "aNode", target: "bNode" }],
       fadingNodes: [],
@@ -603,6 +639,7 @@ describe("selectGraphToView", () => {
             { id: "bNode" },
             { id: "cNode" },
             { id: "dNode" },
+            { id: "eNode" },
           ],
           links: [{ source: "aNode", target: "bNode" }],
         },
@@ -610,23 +647,34 @@ describe("selectGraphToView", () => {
           editType: "toggleNodesInPinGroup",
           pinGroupId: "pinnnLowerPriority",
         },
-        pinGroups: [
-          {
-            id: "pinnn",
+        pinGroups: {
+          default: {
+            id: "default",
             active: true,
-            pins: { aNode: { fx: 5, fy: 6 }, bNode: { fx: 7, fy: 8 } },
+            pins: { eNode: { fx: -1, fy: -2 } },
           },
-          {
-            id: "pinnnIgnoreMe",
-            active: false,
-            pins: { dNode: { fx: 99, fy: 100 } },
-          },
-          {
-            id: "pinnnLowerPriority",
-            active: true,
-            pins: { bNode: { fx: 9, fy: 10 }, cNode: { fx: 11, fy: 12 } },
-          },
-        ],
+          other: [
+            {
+              id: "pinnn",
+              active: true,
+              pins: { aNode: { fx: 5, fy: 6 }, bNode: { fx: 7, fy: 8 } },
+            },
+            {
+              id: "pinnnIgnoreMe",
+              active: false,
+              pins: { dNode: { fx: 99, fy: 100 } },
+            },
+            {
+              id: "pinnnLowerPriority",
+              active: true,
+              pins: {
+                bNode: { fx: 9, fy: 10 },
+                cNode: { fx: 11, fy: 12 },
+                eNode: { fx: -100, fy: -200 },
+              },
+            },
+          ],
+        },
       })
     ).toEqual({
       nodes: [
@@ -656,6 +704,14 @@ describe("selectGraphToView", () => {
           id: "dNode",
           ...standardOutputtedNodeProperties,
           ongoingEditIsTransparent: true,
+        },
+        {
+          id: "eNode",
+          ...standardOutputtedNodeProperties,
+          fx: -100,
+          fy: -200,
+          pinSourceGroupId: "pinnnLowerPriority",
+          ongoingEditIsTransparent: false,
         },
       ],
       links: [{ source: "aNode", target: "bNode" }],
@@ -776,6 +832,7 @@ describe("combineLogical true", () => {
   test("can show only the nodes in a subset view", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "subset",
           fadingLinks: true,
@@ -944,6 +1001,7 @@ describe("node groups", () => {
   test("full view style", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: { viewStyle: "full", fadingLinks: true, combineLogical: false },
         fullGraph: {
           nodes: [
@@ -994,6 +1052,7 @@ describe("node groups", () => {
   test("focus view", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "focus",
           fadingLinks: true,
@@ -1078,6 +1137,7 @@ describe("node groups", () => {
   test("can show only the nodes in a subset view", () => {
     expect(
       selectGraphToView({
+        ...standardState,
         view: {
           viewStyle: "subset",
           fadingLinks: true,

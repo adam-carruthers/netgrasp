@@ -14,28 +14,34 @@ import ErrorBoundary from "./reactApp/other/ErrorBoundary";
 import d3AppInit from "./d3App/d3App";
 import ReactApp from "./reactApp/reactApp";
 import D3FunctionsContext from "./reactApp/other/D3FunctionsContext";
+import showEverythingHasBrokenError from "./showEverythingHasBrokenError";
 
-const persistor = persistStore(store);
+try {
+  const persistor = persistStore(store);
 
-const { boundCenterViewOnHighlightedNode, getSimulatedNodeById } = d3AppInit();
+  const { boundCenterViewOnHighlightedNode, getSimulatedNodeById } =
+    d3AppInit();
 
-ReactDOM.render(
-  <React.StrictMode>
-    <ErrorBoundary>
-      <D3FunctionsContext.Provider
-        value={{
-          centerViewOnHighlighted: boundCenterViewOnHighlightedNode,
-          getSimulatedNodeById,
-        }}
-      >
-        <Provider store={store}>
-          <PersistGate loading={null} persistor={persistor}>
-            <ReactApp />
-          </PersistGate>
-        </Provider>
-        <NotificationContainer />
-      </D3FunctionsContext.Provider>
-    </ErrorBoundary>
-  </React.StrictMode>,
-  document.getElementById("app")
-);
+  ReactDOM.render(
+    <React.StrictMode>
+      <ErrorBoundary>
+        <D3FunctionsContext.Provider
+          value={{
+            centerViewOnHighlighted: boundCenterViewOnHighlightedNode,
+            getSimulatedNodeById,
+          }}
+        >
+          <Provider store={store}>
+            <PersistGate loading={null} persistor={persistor}>
+              <ReactApp />
+            </PersistGate>
+          </Provider>
+          <NotificationContainer />
+        </D3FunctionsContext.Provider>
+      </ErrorBoundary>
+    </React.StrictMode>,
+    document.getElementById("app")
+  );
+} catch {
+  showEverythingHasBrokenError();
+}
