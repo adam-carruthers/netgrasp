@@ -27,10 +27,40 @@ const handleNodeClickThunk =
       ongoingEdit,
       fullGraph: { nodes },
       pinGroups: { default: defaultPinGroup },
+      highlighted: highlightedNode,
     } = getState();
 
     if (event && event.ctrlKey) {
       handlePinClick(ongoingEdit, defaultPinGroup, clickedDataNode, dispatch);
+    } else if (event && event.altKey) {
+      if (ongoingEdit) {
+        NotificationManager.error(
+          "To prevent confusion it is not allowed to create link by alt click during an ongoing edit",
+          "Can't alt-click during ongoing edit"
+        );
+        return;
+      }
+      if (!highlightedNode) {
+        NotificationManager.error(
+          "Alt-click creates links from the highlighted node to the clicked node, but no node is highlighted, so no link can be created",
+          "Can't create link - no highlighted node"
+        );
+        return;
+      }
+      if (highlightedNode.hNode === clickedDataNode.id) {
+        NotificationManager.error(
+          "Alt-click creates links from the highlighted node to the clicked node, but the node you alt-clicked is the highlighted node!",
+          "Can't create link to self"
+        );
+        return;
+      }
+
+      dispatch(
+        createLinkAndClearOngoingEdit({
+          source: highlightedNode.hNode,
+          target: clickedDataNode.id,
+        })
+      );
     } else if (ongoingEdit?.editType === "createLink" && ongoingEdit.source) {
       dispatch(
         createLinkAndClearOngoingEdit({
