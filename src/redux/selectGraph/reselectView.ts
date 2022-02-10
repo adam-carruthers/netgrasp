@@ -21,7 +21,6 @@ const selectFadingLinks = (state: RootState) => state.view.fadingLinks;
 const selectCombineLogical = (state: RootState) => state.view.combineLogical;
 const selectFocusViewDistance = (state: RootState) =>
   state.view.focusViewDistance;
-const selectSubsetViews = (state: RootState) => state.subsetViews;
 const selectPathView = (state: RootState) => state.pathView;
 export const selectSelectedPathId = (state: RootState) => state.selectedPath;
 const selectPaths = (state: RootState) => state.paths;
@@ -151,18 +150,6 @@ export const selectHighlightedNodeLogicalGroup = createSelector(
 // Miscellaneous useful elements for later
 //
 
-// => Being edited subset view nodes
-const selectBeingEditedSubsetViewNodes = createSelector(
-  selectSubsetViews,
-  selectOngoingEdit,
-  (subsetViews, ongoingEdit) =>
-    ongoingEdit?.editType === "editSubsetView"
-      ? subsetViews.find(
-          (subsetView) => subsetView.id === ongoingEdit.subsetViewId
-        )?.nodes || null
-      : null
-);
-
 const selectBeingEditedNodeGroupNodes = createSelector(
   selectNodeGroups,
   selectOngoingEdit,
@@ -262,14 +249,15 @@ export const selectFullGraphLogicalCombinedNodes = createSelector(
 //
 
 export const selectNodesToExclude = createSelector(
-  selectSubsetViews,
-  (subsetViews) => {
+  selectNodeGroups,
+  (nodeGroups) => {
     const excludeSet = new Set<string>();
-    (subsetViews || [])
-      .filter((subsetView) => subsetView.exclude)
-      .forEach((subsetView) =>
-        subsetView.nodes.forEach((nodeId) => excludeSet.add(nodeId))
-      );
+    (nodeGroups || [])
+      .filter((nodeGroup) => nodeGroup.exclude)
+      .forEach((nodeGroup) => {
+        excludeSet.add(nodeGroup.id);
+        nodeGroup.members.forEach((nodeId) => excludeSet.add(nodeId));
+      });
     return excludeSet;
   }
 );
@@ -386,8 +374,8 @@ export const selectCombinedGraphLinks = createSelector(
   selectFullGraphLinks,
   selectAllCombinesNodeIdMap,
   selectNodesToExclude,
-  (links, logicalMap, excludeNodes): ReduxLink[] => {
-    return links
+  (links, logicalMap, excludeNodes): ReduxLink[] =>
+    links
       .map(({ source, target }) => ({
         source: logicalMap[source] || source,
         target: logicalMap[target] || target,
@@ -397,8 +385,7 @@ export const selectCombinedGraphLinks = createSelector(
           source !== target &&
           !excludeNodes.has(source) &&
           !excludeNodes.has(target)
-      );
-  }
+      )
 );
 
 const selectCombinedGraphNodesById = createSelector(
@@ -410,16 +397,16 @@ const selectCombinedGraphNodesById = createSelector(
 // After combine other stuff
 //
 
-const selectBeingViewedSubsetViewCombinedNodeIds = createSelector(
-  selectSubsetViews,
+const selectBeingViewedNodeGroupCombinedNodeIds = createSelector(
+  selectNodeGroups,
   selectView,
   selectAllCombinesNodeIdMap,
-  (subsetViews, view, combinesMap) => {
-    if (view.viewStyle !== "subset") return null;
+  (nodeGroups, view, combinesMap) => {
+    if (view.viewStyle !== "nodeGroup") return null;
 
     const nodeIds =
-      subsetViews.find((subsetView) => subsetView.id === view.subsetViewId)
-        ?.nodes || [];
+      nodeGroups.find((subsetView) => subsetView.id === view.nodeGroupId)
+        ?.members || [];
 
     const nodeIdsAfterMerge = nodeIds.map(
       (nodeId) => combinesMap[nodeId] || nodeId
@@ -498,13 +485,13 @@ const selectBeingViewedPathNodeIdsLinks = createSelector(
     };
   }
 );
-const selectBeingViewedSubsetViewNodeIdsLinks = createSelector(
-  selectBeingViewedSubsetViewCombinedNodeIds,
+const selectBeingViewedNodeGroupNodeIdsLinks = createSelector(
+  selectBeingViewedNodeGroupCombinedNodeIds,
   selectCombinedGraphLinks,
-  (subsetViewNodeIds, fullGraphLinks) => {
-    if (!subsetViewNodeIds) return null;
+  (nodeGroupNodeIds, fullGraphLinks) => {
+    if (!nodeGroupNodeIds) return null;
 
-    const nodeIdSet = new Set(subsetViewNodeIds);
+    const nodeIdSet = new Set(nodeGroupNodeIds);
     const { linksWithin, remainingLinksAfter: remainingLinks } =
       getLinksWithinNodeSet(nodeIdSet, fullGraphLinks);
     const {
@@ -513,7 +500,7 @@ const selectBeingViewedSubsetViewNodeIdsLinks = createSelector(
     } = getNodesLinksDirectlyConnectedToNodeSet(nodeIdSet, remainingLinks);
 
     return {
-      nodeIds: subsetViewNodeIds,
+      nodeIds: nodeGroupNodeIds,
       links: linksWithin,
       fadingNodeIds: Array.from(fadingNodeIdsSet),
       fadingLinks,
@@ -548,14 +535,14 @@ const selectBeingViewedFocussedNodeIdsLinks = createSelector(
 const selectNodeIdsLinksForViewing = createSelector(
   selectView,
   selectBeingViewedPathNodeIdsLinks,
-  selectBeingViewedSubsetViewNodeIdsLinks,
+  selectBeingViewedNodeGroupNodeIdsLinks,
   selectBeingViewedFocussedNodeIdsLinks,
-  (view, pathInfo, subsetInfo, focusInfo) => {
+  (view, pathInfo, nodeGroupInfo, focusInfo) => {
     switch (view.viewStyle) {
       case "path":
         return pathInfo;
-      case "subset":
-        return subsetInfo;
+      case "nodeGroup":
+        return nodeGroupInfo;
       case "focus":
         return focusInfo;
       case "full":
@@ -702,13 +689,12 @@ interface NodeGroupWithOngoingEditTransparency
   extends NodeGroupWithExtraPinInfo,
     OngoingEditTransparency {}
 
-// => Add on transparency if a subsetView edit is ongoing
-const selectNodesLinksIncludingEditSubsetTransparency = createSelector(
+const selectNodesLinksIncludingPinGroupTransparency = createSelector(
   selectNodesLinksPinned,
-  selectBeingEditedSubsetViewNodes,
+  selectBeingEditedPinGroupPins,
   (
     nodesLinksForViewing,
-    beingEditedSubsetViewNodes
+    pins
   ): {
     nodes: ReduxNodeWithOngoingEditTransparency[];
     fadingNodes: ReduxNodeWithExtraPinInfo[];
@@ -720,15 +706,11 @@ const selectNodesLinksIncludingEditSubsetTransparency = createSelector(
     ...nodesLinksForViewing,
     nodes: nodesLinksForViewing.nodes.map((node) => ({
       ...node,
-      ongoingEditIsTransparent: beingEditedSubsetViewNodes
-        ? beingEditedSubsetViewNodes.every(
-            (nodeInSubsetViewId) => node.id !== nodeInSubsetViewId
-          )
-        : false,
+      ongoingEditIsTransparent: pins ? !(node.id in pins) : false,
     })),
     nodeGroups: nodesLinksForViewing.nodeGroups.map((nodeGroup) => ({
       ...nodeGroup,
-      ongoingEditIsTransparent: false,
+      ongoingEditIsTransparent: pins ? !(nodeGroup.id in pins) : false,
     })),
   })
 );
@@ -739,7 +721,7 @@ interface ReduxNodeWithAlreadyInLogicalGroupWarning
 }
 
 const selectNodesLinksIncludingLogicalGroupTransparency = createSelector(
-  selectNodesLinksIncludingEditSubsetTransparency,
+  selectNodesLinksIncludingPinGroupTransparency,
   selectOngoingEdit,
   (
     nodesLinksForViewing,
@@ -781,28 +763,8 @@ const selectNodesLinksIncludingLogicalGroupTransparency = createSelector(
   }
 );
 
-const selectNodesLinksIncludingPinGroupTransparency = createSelector(
-  selectNodesLinksIncludingLogicalGroupTransparency,
-  selectBeingEditedPinGroupPins,
-  (nodesLinksForViewing, pins) => {
-    if (!pins) return nodesLinksForViewing;
-
-    return {
-      ...nodesLinksForViewing,
-      nodes: nodesLinksForViewing.nodes.map((node) => ({
-        ...node,
-        ongoingEditIsTransparent: !(node.id in pins),
-      })),
-      nodeGroups: nodesLinksForViewing.nodeGroups.map((nodeGroup) => ({
-        ...nodeGroup,
-        ongoingEditIsTransparent: !(nodeGroup.id in pins),
-      })),
-    };
-  }
-);
-
 const selectNodesLinksIncludingEditNodeGroupTransparency = createSelector(
-  selectNodesLinksIncludingPinGroupTransparency,
+  selectNodesLinksIncludingLogicalGroupTransparency,
   selectBeingEditedNodeGroupNodes,
   (nodesLinksForViewing, beingEditedGroupNodes) => ({
     ...nodesLinksForViewing,

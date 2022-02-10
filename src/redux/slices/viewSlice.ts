@@ -1,14 +1,14 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { uploadGraph } from "./commonActions";
 import { deleteNode } from "./fullGraphSlice";
+import { deleteNodeGroup } from "./nodeGroupsSlice";
 import { deletePath } from "./pathsSlice";
 import { clearSelectedPath } from "./selectedPathSlice";
-import { deleteSubsetView } from "./subsetViewsSlice";
 
 type View = (
   | { viewStyle: "full" }
   | { viewStyle: "focus"; focusNodeId: string }
-  | { viewStyle: "subset"; subsetViewId: string }
+  | { viewStyle: "nodeGroup"; nodeGroupId: string }
   | { viewStyle: "path" }
 ) & {
   fadingLinks: boolean;
@@ -48,9 +48,9 @@ const viewSlice = createSlice({
       ...copyPersistentProperties(state),
     }),
 
-    setViewToSubsetView: (state, action: PayloadAction<string>) => ({
-      viewStyle: "subset",
-      subsetViewId: action.payload,
+    setViewToNodeGroup: (state, action: PayloadAction<string>) => ({
+      viewStyle: "nodeGroup",
+      nodeGroupId: action.payload,
       ...copyPersistentProperties(state),
     }),
 
@@ -92,8 +92,8 @@ const viewSlice = createSlice({
             }
           : state
       )
-      .addCase(deleteSubsetView, (state, action) =>
-        state.viewStyle === "subset" && state.subsetViewId === action.payload
+      .addCase(deleteNodeGroup, (state, action) =>
+        state.viewStyle === "nodeGroup" && state.nodeGroupId === action.payload
           ? {
               viewStyle: "full",
               ...copyPersistentProperties(state),
@@ -114,7 +114,7 @@ const viewSlice = createSlice({
 export const {
   setViewToFull,
   setViewToNodeFocus,
-  setViewToSubsetView,
+  setViewToNodeGroup,
   setViewToPathView,
   setFadingLinks,
   setFocusViewDistance,

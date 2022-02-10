@@ -19,7 +19,6 @@ import fullGraph from "./slices/fullGraphSlice";
 import view from "./slices/viewSlice";
 import highlighted from "./slices/highlightedSlice";
 import ongoingEdit from "./slices/ongoingEditSlice";
-import subsetViews from "./slices/subsetViewsSlice";
 import paths from "./slices/pathsSlice";
 import selectedPath from "./slices/selectedPathSlice";
 import pathView from "./slices/pathViewSlice";
@@ -32,7 +31,6 @@ const rootReducer = combineReducers({
   view,
   highlighted,
   ongoingEdit,
-  subsetViews,
   paths,
   selectedPath,
   pathView,

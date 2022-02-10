@@ -24,6 +24,14 @@ const isLinkRefreshNeeded = (oldLinks: ReduxLink[], newLinks: ReduxLink[]) =>
       source !== newLinks[i].source || target !== newLinks[i].target
   );
 
+const isNodeJigNeeded = (
+  oldNodes: { fx: number | null; fy: number | null }[],
+  newNodes: { fx: number | null; fy: number | null }[]
+) =>
+  oldNodes.some(
+    (node, i) => node.fx !== newNodes[i].fx || node.fy !== newNodes[i].fy
+  );
+
 const reduxSubscribe = (simulation: NodeSimulation) => {
   // Section 1 - Track redux store changes to only refresh on necessary updates
   let currentViewGraph: FullGraphSelectedToView;
@@ -80,15 +88,18 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
           simulation.updateNodeInfo(currentViewGraph);
           if (
             simulation.simulation.alpha() < 0.1 &&
-            (previousViewGraph.nodes.some(
-              (node, i) =>
-                node.fx !== currentViewGraph.nodes[i].fx ||
-                node.fy !== currentViewGraph.nodes[i].fy
-            ) ||
-              previousViewGraph.fadingNodes.some(
-                (node, i) =>
-                  node.fx !== currentViewGraph.nodes[i].fx ||
-                  node.fy !== currentViewGraph.nodes[i].fy
+            (isNodeJigNeeded(previousViewGraph.nodes, currentViewGraph.nodes) ||
+              isNodeJigNeeded(
+                previousViewGraph.fadingNodes,
+                currentViewGraph.fadingNodes
+              ) ||
+              isNodeJigNeeded(
+                previousViewGraph.nodeGroups,
+                currentViewGraph.nodeGroups
+              ) ||
+              isNodeJigNeeded(
+                previousViewGraph.fadingNodeGroups,
+                currentViewGraph.fadingNodeGroups
               ))
           ) {
             simulation.jigSimulation();
@@ -110,6 +121,7 @@ const reduxSubscribe = (simulation: NodeSimulation) => {
         );
       }
     } catch (e) {
+      console.error(e);
       showEverythingHasBrokenError();
     }
   }

@@ -16,7 +16,6 @@ const FileTab = () => (
           await saveFile(
             JSON.stringify({
               ...state.fullGraph,
-              subsetViews: state.subsetViews,
               paths: state.paths,
               pinGroups: state.pinGroups,
               nodeGroups: state.nodeGroups,

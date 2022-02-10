@@ -18,10 +18,6 @@ import {
   fixNodeInPinGroup,
   removeNodeFromPinGroup,
 } from "../slices/pinGroupsSlice";
-import {
-  addNodeToSubsetView,
-  removeNodeFromSubsetView,
-} from "../slices/subsetViewsSlice";
 import handlePinClick from "./handlePinClick";
 
 const handleNodeClickThunk =
@@ -42,22 +38,6 @@ const handleNodeClickThunk =
           target: clickedDataNode.id,
         })
       );
-    } else if (ongoingEdit?.editType === "editSubsetView") {
-      if (clickedDataNode.ongoingEditIsTransparent) {
-        dispatch(
-          addNodeToSubsetView({
-            subsetViewId: ongoingEdit.subsetViewId,
-            newNodeId: clickedDataNode.id,
-          })
-        );
-      } else {
-        dispatch(
-          removeNodeFromSubsetView({
-            subsetViewId: ongoingEdit.subsetViewId,
-            deleteNodeId: clickedDataNode.id,
-          })
-        );
-      }
     } else if (ongoingEdit?.editType === "addToPath") {
       dispatch(
         addNodeToPath({

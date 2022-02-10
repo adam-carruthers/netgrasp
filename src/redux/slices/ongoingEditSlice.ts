@@ -33,7 +33,6 @@ type OngoingEdit =
   | null
   | { editType: "createLink"; source: string }
   | { editType: "deleteLink" }
-  | { editType: "editSubsetView"; subsetViewId: string }
   | ({ editType: "addToPath" } & AddToPathEditOptions)
   | ({ editType: "addNodeToLogicalGroup" } & AddNodeToLogicalGroupOptions)
   | {
@@ -53,11 +52,6 @@ const ongoingEditSlice = createSlice({
     }),
 
     startDeleteLink: () => ({ editType: "deleteLink" } as const),
-
-    startEditSubsetView: (_, action: PayloadAction<string>) => ({
-      editType: "editSubsetView",
-      subsetViewId: action.payload,
-    }),
 
     startAddToPath: (_, action: PayloadAction<AddToPathEditOptions>) => ({
       editType: "addToPath",
@@ -134,7 +128,6 @@ const ongoingEditSlice = createSlice({
 export const {
   startCreateLinkWithSource,
   startDeleteLink,
-  startEditSubsetView,
   startAddToPath,
   startAddNodeToLogicalGroup,
   startToggleNodesInLogicalGroup,

@@ -346,7 +346,7 @@ describe("selectGraphToView", () => {
     });
   });
 
-  test("should correctly apply the subset transparency", () => {
+  test("should correctly apply the node group transparency", () => {
     expect(
       selectGraphToView({
         ...standardState,
@@ -356,12 +356,12 @@ describe("selectGraphToView", () => {
           links: [{ source: "aNode", target: "bNode" }],
         },
         ongoingEdit: {
-          editType: "editSubsetView",
-          subsetViewId: "idekam",
+          editType: "toggleNodesInNodeGroup",
+          nodeGroupId: "idekam",
         },
-        subsetViews: [
+        nodeGroups: [
           { id: "should be ignored" },
-          { id: "idekam", nodes: ["bNode"] },
+          { id: "idekam", members: ["bNode"] },
         ],
       })
     ).toEqual({
@@ -414,12 +414,12 @@ describe("selectGraphToView", () => {
           ],
         },
         ongoingEdit: {
-          editType: "editSubsetView",
-          subsetViewId: "idekam",
+          editType: "toggleNodesInNodeGroup",
+          nodeGroupId: "idekam",
         },
-        subsetViews: [
+        nodeGroups: [
           { id: "should be ignored" },
-          { id: "idekam", nodes: ["bNode", "eNode"] },
+          { id: "idekam", members: ["bNode", "eNode"] },
         ],
       })
     ).toEqual({
@@ -502,14 +502,14 @@ describe("selectGraphToView", () => {
     });
   });
 
-  test("can show only the nodes in a subset view", () => {
+  test("can show only the nodes in a node group", () => {
     expect(
       selectGraphToView({
         ...standardState,
         view: {
-          viewStyle: "subset",
+          viewStyle: "nodeGroup",
           fadingLinks: false,
-          subsetViewId: "aaaa",
+          nodeGroupId: "aaaa",
           combineLogical: false,
         },
         fullGraph: {
@@ -530,10 +530,10 @@ describe("selectGraphToView", () => {
         },
         selectedPath: null,
         paths: [],
-        subsetViews: [
+        nodeGroups: [
           {
             id: "aaaa",
-            nodes: ["dNode", "eNode"],
+            members: ["dNode", "eNode"],
           },
         ],
       })
@@ -838,14 +838,14 @@ describe("combineLogical true", () => {
     ).toEqual(["E", "B", "A", "B"]);
   });
 
-  test("can show only the nodes in a subset view", () => {
+  test("can show only the nodes in a node group", () => {
     expect(
       selectGraphToView({
         ...standardState,
         view: {
-          viewStyle: "subset",
+          viewStyle: "nodeGroup",
           fadingLinks: true,
-          subsetViewId: "aaaa",
+          nodeGroupId: "aaaa",
           combineLogical: true,
         },
         fullGraph: {
@@ -877,10 +877,10 @@ describe("combineLogical true", () => {
         ongoingEdit: null,
         selectedPath: null,
         paths: [],
-        subsetViews: [
+        nodeGroups: [
           {
             id: "aaaa",
-            nodes: ["bNode", "cNode", "dNode", "eNode", "kNode"],
+            members: ["bNode", "cNode", "dNode", "eNode", "kNode"],
           },
         ],
       })
@@ -1151,9 +1151,9 @@ describe("node groups", () => {
       selectGraphToView({
         ...standardState,
         view: {
-          viewStyle: "subset",
+          viewStyle: "nodeGroup",
           fadingLinks: true,
-          subsetViewId: "aaaa",
+          nodeGroupId: "aaaa",
           combineLogical: true,
         },
         fullGraph: {
@@ -1186,13 +1186,12 @@ describe("node groups", () => {
         ongoingEdit: null,
         selectedPath: null,
         paths: [],
-        subsetViews: [
+        nodeGroups: [
           {
             id: "aaaa",
-            nodes: ["bNode", "cNode", "dNode", "eNode", "kNode"],
+            active: false,
+            members: ["bNode", "cNode", "dNode", "eNode", "kNode"],
           },
-        ],
-        nodeGroups: [
           {
             id: "ng1",
             active: true,

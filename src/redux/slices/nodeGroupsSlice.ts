@@ -7,6 +7,7 @@ export interface NodeGroup {
   id: string;
   name: string;
   active: boolean;
+  exclude: boolean;
   members: string[];
 }
 
@@ -27,6 +28,7 @@ const nodeGroupsSlice = createSlice({
         id: nanoid(),
         name: "New Node Group",
         active: false,
+        exclude: false,
         members: [],
       });
     },
@@ -50,6 +52,17 @@ const nodeGroupsSlice = createSlice({
 
       if (nodeGroup) {
         nodeGroup.active = action.payload.newActivation;
+      }
+    },
+
+    changeNodeGroupExclude: (
+      state,
+      action: PayloadAction<{ nodeGroupId: string; newExclude: boolean }>
+    ) => {
+      const nodeGroup = getNodeGroupById(state, action.payload.nodeGroupId);
+
+      if (nodeGroup) {
+        nodeGroup.exclude = action.payload.newExclude;
       }
     },
 
@@ -122,6 +135,7 @@ export const {
   changeNodeGroupName,
   changeNodeGroupActivation,
   changeNodeGroupPosition,
+  changeNodeGroupExclude,
   addNodeToNodeGroup,
   removeNodeFromNodeGroup,
   deleteNodeGroup,
